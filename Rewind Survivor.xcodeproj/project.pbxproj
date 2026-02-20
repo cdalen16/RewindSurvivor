@@ -10,25 +10,9 @@
 		BDBB7A8F2F47EE120098D32A /* Rewind Survivor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rewind Survivor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		BDBB7AA02F47EE120098D32A /* Exceptions for "Rewind Survivor Shared" folder in "Rewind Survivor iOS" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Actions.sks,
-				Assets.xcassets,
-				GameScene.sks,
-				GameScene.swift,
-			);
-			target = BDBB7A8E2F47EE120098D32A /* Rewind Survivor iOS */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BDBB7A862F47EE120098D32A /* Rewind Survivor Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				BDBB7AA02F47EE120098D32A /* Exceptions for "Rewind Survivor Shared" folder in "Rewind Survivor iOS" target */,
-			);
 			path = "Rewind Survivor Shared";
 			sourceTree = "<group>";
 		};
@@ -83,6 +67,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				BDBB7A862F47EE120098D32A /* Rewind Survivor Shared */,
 				BDBB7A912F47EE120098D32A /* Rewind Survivor iOS */,
 			);
 			name = "Rewind Survivor iOS";

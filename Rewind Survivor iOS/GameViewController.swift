@@ -1,39 +1,31 @@
-//
-//  GameViewController.swift
-//  Rewind Survivor iOS
-//
-//  Created by Campbell Dalen on 2/19/26.
-//
-
 import UIKit
 import SpriteKit
-import GameplayKit
 
 class GameViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         let scene = GameScene.newGameScene()
 
-        // Present the scene
         let skView = self.view as! SKView
         skView.presentScene(scene)
-        
+
         skView.ignoresSiblingOrder = true
         skView.showsFPS = true
         skView.showsNodeCount = true
+        skView.preferredFramesPerSecond = 60
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-            return .allButUpsideDown
-        } else {
-            return .all
-        }
+        return .portrait
     }
 
     override var prefersStatusBarHidden: Bool {
+        return true
+    }
+
+    override var prefersHomeIndicatorAutoHidden: Bool {
         return true
     }
 }
