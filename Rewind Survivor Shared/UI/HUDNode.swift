@@ -196,7 +196,7 @@ class HUDNode: SKNode {
         ghostLabel.horizontalAlignmentMode = .center
 
         // Pause button - top right corner
-        pauseButton.position = CGPoint(x: right, y: top)
+        pauseButton.position = CGPoint(x: right - 10, y: top)
         pauseButton.zPosition = 1
 
         // Wave banner - center of screen
