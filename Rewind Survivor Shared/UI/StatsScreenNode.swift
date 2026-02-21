@@ -46,8 +46,10 @@ class StatsScreenNode: SKNode {
             ("PLAY TIME", formatTime(profile.totalPlayTime)),
         ]
 
-        let startY = screenSize.height * 0.2
-        let rowHeight: CGFloat = 42
+        let totalRows = CGFloat(stats.count)
+        let rowHeight: CGFloat = min(48, (screenSize.height * 0.55) / totalRows)
+        let startY = screenSize.height * 0.22
+        let colWidth = min(screenSize.width * 0.4, 140.0)
 
         for (i, stat) in stats.enumerated() {
             let y = startY - CGFloat(i) * rowHeight
@@ -56,7 +58,7 @@ class StatsScreenNode: SKNode {
             nameLabel.text = stat.0
             nameLabel.fontSize = 13
             nameLabel.fontColor = ColorPalette.textSecondary
-            nameLabel.position = CGPoint(x: -85, y: y)
+            nameLabel.position = CGPoint(x: -colWidth, y: y)
             nameLabel.zPosition = 1
             nameLabel.verticalAlignmentMode = .center
             nameLabel.horizontalAlignmentMode = .left
@@ -66,7 +68,7 @@ class StatsScreenNode: SKNode {
             valueLabel.text = stat.1
             valueLabel.fontSize = 16
             valueLabel.fontColor = ColorPalette.textPrimary
-            valueLabel.position = CGPoint(x: 85, y: y)
+            valueLabel.position = CGPoint(x: colWidth, y: y)
             valueLabel.zPosition = 1
             valueLabel.verticalAlignmentMode = .center
             valueLabel.horizontalAlignmentMode = .right
@@ -74,7 +76,7 @@ class StatsScreenNode: SKNode {
 
             // Separator line
             if i < stats.count - 1 {
-                let line = SKShapeNode(rectOf: CGSize(width: 180, height: 1))
+                let line = SKShapeNode(rectOf: CGSize(width: colWidth * 2 + 10, height: 1))
                 line.fillColor = ColorPalette.textSecondary.withAlphaComponent(0.2)
                 line.strokeColor = .clear
                 line.position = CGPoint(x: 0, y: y - rowHeight / 2)
