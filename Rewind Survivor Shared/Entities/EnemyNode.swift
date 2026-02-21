@@ -23,6 +23,24 @@ class EnemyNode: SKSpriteNode {
     private var stuckTimer: TimeInterval = 0
     private var stuckNudgeAngle: CGFloat = 0
 
+    // Juggernaut state
+    private var groundPoundState: GroundPoundState = .walking
+    private var groundPoundTimer: TimeInterval = 0
+
+    // Wraith state
+    private var wraithPhaseTimer: TimeInterval = 0
+    private var isPhased: Bool = false
+
+    // Splitter state
+    var canSplit: Bool = true
+
+    private enum GroundPoundState {
+        case walking
+        case telegraphing
+        case slamming
+        case recovering
+    }
+
     private enum ChargeState {
         case approaching
         case telegraphing
@@ -81,6 +99,11 @@ class EnemyNode: SKSpriteNode {
             animTimer = 0
             currentFrame = (currentFrame + 1) % 2
             self.texture = SpriteFactory.shared.enemyTexture(type: enemyType, frame: currentFrame)
+        }
+
+        // Face movement direction (flip sprite horizontally)
+        if let vel = physicsBody?.velocity, abs(vel.dx) > 10 {
+            xScale = vel.dx < 0 ? -abs(xScale) : abs(xScale)
         }
 
         // Stuck detection
@@ -207,6 +230,98 @@ class EnemyNode: SKSpriteNode {
                 spawnTimer = 0
                 spawnMinion()
             }
+
+        case .juggernaut:
+            groundPoundTimer += deltaTime
+            switch groundPoundState {
+            case .walking:
+                let dir = avoidObstacles(desiredDirection: toTarget.normalized())
+                physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
+                if dist < 70 {
+                    groundPoundState = .telegraphing
+                    groundPoundTimer = 0
+                    physicsBody?.velocity = .zero
+                    // Telegraph: flash red and grow slightly
+                    let flash = SKAction.sequence([
+                        SKAction.colorize(with: .red, colorBlendFactor: 0.6, duration: 0.15),
+                        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.15)
+                    ])
+                    run(SKAction.repeat(flash, count: 3), withKey: "groundPoundTelegraph")
+                    run(SKAction.scale(to: 1.15, duration: 0.8), withKey: "groundPoundGrow")
+                }
+
+            case .telegraphing:
+                physicsBody?.velocity = .zero
+                if groundPoundTimer >= 0.9 {
+                    groundPoundState = .slamming
+                    groundPoundTimer = 0
+                    removeAction(forKey: "groundPoundTelegraph")
+                    removeAction(forKey: "groundPoundGrow")
+                    // Slam down
+                    run(SKAction.scale(to: 1.0, duration: 0.08))
+                    groundPound()
+                }
+
+            case .slamming:
+                physicsBody?.velocity = .zero
+                if groundPoundTimer >= 0.3 {
+                    groundPoundState = .recovering
+                    groundPoundTimer = 0
+                }
+
+            case .recovering:
+                physicsBody?.velocity = .zero
+                if groundPoundTimer >= 1.2 {
+                    groundPoundState = .walking
+                    groundPoundTimer = 0
+                }
+            }
+
+        case .wraith:
+            wraithPhaseTimer += deltaTime
+
+            if isPhased {
+                // Phased: invisible, fast, move toward player
+                physicsBody?.velocity = .zero
+                // Phase lasts 1.5s, then reappear near target
+                if wraithPhaseTimer >= 1.5 {
+                    isPhased = false
+                    wraithPhaseTimer = 0
+                    // Teleport near target
+                    let offset = CGVector(
+                        dx: CGFloat.random(in: -50...50),
+                        dy: CGFloat.random(in: -50...50)
+                    )
+                    position = CGPoint(x: nearest.position.x + offset.dx, y: nearest.position.y + offset.dy)
+                    // Fade in
+                    alpha = 0
+                    run(SKAction.fadeAlpha(to: 0.85, duration: 0.3), withKey: "wraithAppear")
+                    physicsBody?.categoryBitMask = PhysicsCategory.enemy
+                    physicsBody?.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.player
+                }
+            } else {
+                // Visible: chase slowly
+                let dir = avoidObstacles(desiredDirection: toTarget.normalized())
+                physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
+                // Shimmer effect
+                alpha = 0.75 + 0.1 * CGFloat(sin(wraithPhaseTimer * 6.0))
+
+                // Phase out every 4 seconds
+                if wraithPhaseTimer >= 4.0 {
+                    isPhased = true
+                    wraithPhaseTimer = 0
+                    // Fade out
+                    run(SKAction.fadeAlpha(to: 0.0, duration: 0.4), withKey: "wraithPhase")
+                    // Become untargetable
+                    physicsBody?.categoryBitMask = 0
+                    physicsBody?.contactTestBitMask = 0
+                    physicsBody?.velocity = .zero
+                }
+            }
+
+        case .splitter:
+            let dir = avoidObstacles(desiredDirection: toTarget.normalized())
+            physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
         }
 
         // Safety clamp (failsafe only, physics boundary should handle this)
@@ -253,12 +368,10 @@ class EnemyNode: SKSpriteNode {
     // MARK: - Slow/Freeze Aura Support
 
     func applySlow(_ percent: CGFloat) {
-        if !isSlowed {
-            isSlowed = true
-            moveSpeed = baseSpeed * (1.0 - percent)
-            colorBlendFactor = 0.3
-            color = SKColor(red: 0.6, green: 0.9, blue: 1.0, alpha: 1.0)
-        }
+        isSlowed = true
+        moveSpeed = baseSpeed * (1.0 - percent)
+        colorBlendFactor = 0.6
+        color = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)
     }
 
     func removeSlow() {
@@ -397,6 +510,55 @@ class EnemyNode: SKSpriteNode {
         ]))
 
         die(scene: scene)
+    }
+
+    private func groundPound() {
+        guard let scene = self.scene else { return }
+
+        let radius: CGFloat = 100
+        // Damage player if in range
+        scene.enumerateChildNodes(withName: "player") { node, _ in
+            let dx = node.position.x - self.position.x
+            let dy = node.position.y - self.position.y
+            if sqrt(dx * dx + dy * dy) < radius {
+                (node as? PlayerNode)?.takeDamage(self.contactDamage * 1.5)
+            }
+        }
+
+        // Visual shockwave
+        let ring = SKShapeNode(circleOfRadius: 10)
+        ring.strokeColor = ColorPalette.enemyJuggernaut
+        ring.lineWidth = 4
+        ring.fillColor = .clear
+        ring.position = position
+        ring.zPosition = 85
+        ring.blendMode = .add
+        scene.addChild(ring)
+        ring.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: radius / 10, duration: 0.3),
+                SKAction.fadeOut(withDuration: 0.3)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // Ground crack particles
+        for _ in 0..<16 {
+            let angle = CGFloat.random(in: 0...(2 * .pi))
+            let dist = CGFloat.random(in: 20...radius * 0.8)
+            let particle = SKSpriteNode(color: SKColor(red: 0.5, green: 0.4, blue: 0.3, alpha: 1), size: CGSize(width: 4, height: 4))
+            particle.position = CGPoint(x: position.x + cos(angle) * dist, y: position.y + sin(angle) * dist)
+            particle.zPosition = 85
+            particle.blendMode = .add
+            scene.addChild(particle)
+            particle.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.moveBy(x: cos(angle) * 20, y: sin(angle) * 20, duration: 0.4),
+                    SKAction.fadeOut(withDuration: 0.4)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
     }
 
     private func spawnMinion() {

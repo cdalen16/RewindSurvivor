@@ -7,11 +7,11 @@ class SpriteFactory {
 
     func invalidatePlayerTextures() {
         // Clear cached player/ghost textures so they regenerate with new cosmetic colors
-        for dir in Direction.allCases {
-            for f in 0...1 {
-                textureCache.removeValue(forKey: "player_\(dir)_\(f)")
-                textureCache.removeValue(forKey: "ghost_\(dir)_\(f)")
-            }
+        let keysToRemove = textureCache.keys.filter {
+            $0.hasPrefix("player_") || $0.hasPrefix("ghost_") || $0.hasPrefix("shop_preview_") || $0.hasPrefix("trail_preview_")
+        }
+        for key in keysToRemove {
+            textureCache.removeValue(forKey: key)
         }
     }
 
@@ -126,7 +126,7 @@ class SpriteFactory {
             let skinItem = CosmeticCatalog.item(byId: skinId)
             let primary = skinItem?.primaryColor ?? ColorPalette.playerPrimary
             let secondary = skinItem?.secondaryColor ?? ColorPalette.playerSecondary
-            return self.drawPlayerCore(frame: 0, facing: .down, primary: primary, secondary: secondary, hatId: hatId)
+            return self.drawPlayerCore(frame: 0, facing: .down, primary: primary, secondary: secondary, hatId: hatId, skinId: skinId)
         }
     }
 
@@ -166,10 +166,10 @@ class SpriteFactory {
         let primary = skinItem?.primaryColor ?? ColorPalette.playerPrimary
         let secondary = skinItem?.secondaryColor ?? ColorPalette.playerSecondary
         let hatId = PersistenceManager.shared.profile.equippedHat
-        return drawPlayerCore(frame: frame, facing: facing, primary: primary, secondary: secondary, hatId: hatId)
+        return drawPlayerCore(frame: frame, facing: facing, primary: primary, secondary: secondary, hatId: hatId, skinId: skinId)
     }
 
-    private func drawPlayerCore(frame: Int, facing: Direction, primary: SKColor, secondary: SKColor, hatId: String) -> SKTexture {
+    private func drawPlayerCore(frame: Int, facing: Direction, primary: SKColor, secondary: SKColor, hatId: String, skinId: String = "default") -> SKTexture {
         let size = 32
 
         return makeCanvas(size: size) { px in
@@ -181,69 +181,54 @@ class SpriteFactory {
             let highlight = self.lighter(primary, by: 0.45)
             let boot = self.darker(secondary, by: 0.15)
             let armor = self.lighter(secondary, by: 0.15)
+            let buckle = SKColor(red: 0.8, green: 0.7, blue: 0.2, alpha: 1)
 
             // -- Helmet --
-            // Top crest
             for x in 13...18 { px(x, 3, dark) }
             px(15, 2, cyan); px(16, 2, cyan)
-            // Helmet shell
             for y in 4...10 {
                 let hw = y < 6 ? (y - 3) : 5
                 for x in (16 - hw)...(15 + hw) { px(x, y, blue) }
             }
-            // Helmet outline
-            for y in 4...10 { px(16 - (y < 6 ? (y-3) : 5) - 1, y, dark); px(15 + (y < 6 ? (y-3) : 5) + 1, y, dark) }
+            for y in 4...10 {
+                px(16 - (y < 6 ? (y-3) : 5) - 1, y, dark)
+                px(15 + (y < 6 ? (y-3) : 5) + 1, y, dark)
+            }
             for x in 11...20 { px(x, 10, dark) }
-            // Highlight on helmet top
             px(13, 5, highlight); px(14, 5, highlight); px(13, 6, highlight)
 
             // -- Visor --
-            if facing == .down || facing == .left || facing == .right {
-                let visorRow = 7
-                // Visor slit
-                for x in 12...19 { px(x, visorRow, dark) }
-                // Glowing visor
-                px(13, visorRow, visor); px(14, visorRow, visor)
-                px(17, visorRow, visor); px(18, visorRow, visor)
-                // Visor glow (brighter center)
+            if facing == .up {
+                for x in 14...17 { px(x, 7, armor) }
+                px(15, 6, cyan); px(16, 6, cyan)
+            } else {
+                for x in 12...19 { px(x, 7, dark) }
+                px(13, 7, visor); px(14, 7, visor)
+                px(17, 7, visor); px(18, 7, visor)
                 px(13, 8, SKColor(red: 0.2, green: 0.7, blue: 0.6, alpha: 0.4))
                 px(18, 8, SKColor(red: 0.2, green: 0.7, blue: 0.6, alpha: 0.4))
                 if facing == .left {
-                    px(17, visorRow, dark); px(18, visorRow, dark)
+                    px(17, 7, dark); px(18, 7, dark); px(18, 8, dark)
                 } else if facing == .right {
-                    px(13, visorRow, dark); px(14, visorRow, dark)
+                    px(13, 7, dark); px(14, 7, dark); px(13, 8, dark)
                 }
-            } else {
-                // Back of helmet - antenna/stripe
-                for x in 14...17 { px(x, 7, armor) }
-                px(15, 6, cyan); px(16, 6, cyan)
             }
 
-            // -- Torso/Armor --
+            // -- Torso --
             for y in 11...18 {
                 let hw = y < 14 ? 5 : (y < 17 ? 4 : 3)
-                for x in (16 - hw)...(15 + hw) {
-                    px(x, y, armor)
-                }
+                for x in (16 - hw)...(15 + hw) { px(x, y, armor) }
             }
-            // Chest plate center
-            for y in 11...14 {
-                for x in 13...18 { px(x, y, cyan) }
-            }
-            // Chest emblem - diamond
+            for y in 11...14 { for x in 13...18 { px(x, y, cyan) } }
             px(15, 12, white); px(16, 12, white)
             px(14, 13, visor); px(15, 13, visor); px(16, 13, visor); px(17, 13, visor)
             px(15, 14, white); px(16, 14, white)
-            // Armor outline
             for y in 11...18 {
                 let hw = y < 14 ? 5 : (y < 17 ? 4 : 3)
-                px(16 - hw - 1, y, dark)
-                px(15 + hw + 1, y, dark)
+                px(16 - hw - 1, y, dark); px(15 + hw + 1, y, dark)
             }
-            // Belt
             for x in 12...19 { px(x, 17, dark) }
-            px(15, 17, SKColor(red: 0.8, green: 0.7, blue: 0.2, alpha: 1)) // Belt buckle
-            px(16, 17, SKColor(red: 0.8, green: 0.7, blue: 0.2, alpha: 1))
+            px(15, 17, buckle); px(16, 17, buckle)
 
             // -- Shoulder pads --
             for y in 11...13 {
@@ -255,67 +240,167 @@ class SpriteFactory {
             px(9, 14, dark); px(10, 14, dark)
             px(21, 14, dark); px(22, 14, dark)
 
-            // -- Arms --
-            for y in 14...17 {
-                px(9, y, armor); px(10, y, armor)
-                px(21, y, armor); px(22, y, armor)
-            }
-            // Hands
-            px(9, 18, cyan); px(10, 18, cyan)
-            px(21, 18, cyan); px(22, 18, cyan)
+            // -- Arms (contralateral swing with legs) --
+            let leftArmEnd = frame == 0 ? 16 : 18
+            let rightArmEnd = frame == 0 ? 18 : 16
+            for y in 14...leftArmEnd { px(9, y, armor); px(10, y, armor) }
+            px(9, leftArmEnd + 1, cyan); px(10, leftArmEnd + 1, cyan)
+            for y in 14...rightArmEnd { px(21, y, armor); px(22, y, armor) }
+            px(21, rightArmEnd + 1, cyan); px(22, rightArmEnd + 1, cyan)
 
-            // -- Legs with walk animation --
-            let legShift = frame == 1 ? 1 : 0
-            // Left leg
-            for y in 19...24 {
-                px(12 - legShift, y, blue)
-                px(13 - legShift, y, blue)
-                px(14 - legShift, y, armor)
+            // -- Legs (vertical stride — one extended lower, one shorter) --
+            if frame == 0 {
+                // Left leg forward (extended lower)
+                for y in 19...25 { px(12, y, blue); px(13, y, blue); px(14, y, armor) }
+                for x in 11...14 { px(x, 26, boot) }
+                px(11, 25, boot); px(14, 25, boot)
+                // Right leg back (shorter)
+                for y in 19...22 { px(17, y, armor); px(18, y, blue); px(19, y, blue) }
+                for x in 17...20 { px(x, 23, boot) }
+                px(17, 22, boot); px(20, 22, boot)
+            } else {
+                // Right leg forward (extended lower)
+                for y in 19...25 { px(17, y, armor); px(18, y, blue); px(19, y, blue) }
+                for x in 17...20 { px(x, 26, boot) }
+                px(17, 25, boot); px(20, 25, boot)
+                // Left leg back (shorter)
+                for y in 19...22 { px(12, y, blue); px(13, y, blue); px(14, y, armor) }
+                for x in 11...14 { px(x, 23, boot) }
+                px(11, 22, boot); px(14, 22, boot)
             }
-            // Right leg
-            for y in 19...24 {
-                px(17 + legShift, y, armor)
-                px(18 + legShift, y, blue)
-                px(19 + legShift, y, blue)
-            }
-            // Boots
-            for x in (11 - legShift)...(14 - legShift) { px(x, 25, boot); px(x, 24, boot) }
-            for x in (17 + legShift)...(20 + legShift) { px(x, 25, boot); px(x, 24, boot) }
-            // Boot highlight
-            px(11 - legShift, 24, armor)
-            px(17 + legShift, 24, armor)
 
-            // -- White outline for readability --
-            // (Done by adding 1px white where transparent meets opaque - simplified version)
+            // -- Skin overlays --
+            switch skinId {
+            case "skin_skeleton":
+                let bone = SKColor(red: 0.92, green: 0.9, blue: 0.82, alpha: 1)
+                let boneDark = SKColor(red: 0.6, green: 0.58, blue: 0.5, alpha: 1)
+                let eyeSocket = SKColor(red: 0.05, green: 0.05, blue: 0.05, alpha: 1)
+                if facing != .up {
+                    px(12, 6, eyeSocket); px(13, 6, eyeSocket); px(14, 6, eyeSocket)
+                    px(17, 6, eyeSocket); px(18, 6, eyeSocket); px(19, 6, eyeSocket)
+                    px(12, 7, eyeSocket); px(13, 7, bone); px(14, 7, eyeSocket)
+                    px(17, 7, eyeSocket); px(18, 7, bone); px(19, 7, eyeSocket)
+                    px(12, 8, eyeSocket); px(13, 8, eyeSocket); px(14, 8, eyeSocket)
+                    px(17, 8, eyeSocket); px(18, 8, eyeSocket); px(19, 8, eyeSocket)
+                    px(15, 9, eyeSocket); px(16, 9, eyeSocket)
+                    for x in 13...18 { px(x, 10, boneDark) }
+                    px(13, 10, bone); px(15, 10, bone); px(17, 10, bone)
+                }
+                for y in 12...16 {
+                    if y % 2 == 0 {
+                        px(13, y, bone); px(14, y, boneDark); px(15, y, boneDark)
+                        px(16, y, boneDark); px(17, y, boneDark); px(18, y, bone)
+                    }
+                }
+                for y in 12...16 { px(15, y, bone); px(16, y, bone) }
+
+            case "skin_cyber":
+                let neon = primary
+                let neonDim = neon.withAlphaComponent(0.6)
+                for y in 4...10 {
+                    let hw = y < 6 ? (y - 3) : 5
+                    px(16 - hw - 1, y, neon); px(15 + hw + 1, y, neon)
+                }
+                for x in 11...20 { px(x, 10, neon) }
+                for y in 11...18 {
+                    let hw = y < 14 ? 5 : (y < 17 ? 4 : 3)
+                    px(16 - hw - 1, y, neonDim); px(15 + hw + 1, y, neonDim)
+                }
+                px(14, 12, neon); px(15, 12, neon); px(16, 12, neon); px(17, 12, neon)
+                px(14, 13, neon); px(17, 13, neon)
+                px(14, 14, neon); px(15, 14, neon); px(16, 14, neon); px(17, 14, neon)
+                if facing != .up { for x in 12...19 { px(x, 7, neon) } }
+                px(12, 21, neonDim); px(13, 21, neonDim)
+                px(18, 21, neonDim); px(19, 21, neonDim)
+
+            case "skin_magma":
+                let lava = SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1)
+                let lavaHot = SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 1)
+                let lavaDim = SKColor(red: 0.8, green: 0.25, blue: 0.0, alpha: 1)
+                px(13, 5, lava); px(14, 6, lavaHot); px(15, 7, lava)
+                px(18, 5, lavaDim); px(17, 6, lava)
+                px(13, 12, lava); px(14, 13, lavaHot); px(15, 14, lava); px(16, 15, lavaDim)
+                px(18, 12, lavaDim); px(17, 13, lava); px(16, 14, lavaHot)
+                px(15, 13, lavaHot); px(16, 13, lavaHot)
+                px(9, 15, lava); px(10, 16, lavaDim)
+                px(22, 15, lava); px(21, 16, lavaDim)
+                px(13, 21, lava); px(12, 22, lavaDim)
+                px(18, 21, lava); px(19, 22, lavaDim)
+
+            case "skin_ghost":
+                let ghostGlow = SKColor(red: 0.7, green: 0.85, blue: 1.0, alpha: 0.5)
+                let ghostWisp = SKColor(red: 0.5, green: 0.7, blue: 1.0, alpha: 0.35)
+                px(9, 15, ghostWisp); px(8, 16, ghostWisp); px(7, 17, ghostWisp)
+                px(22, 15, ghostWisp); px(23, 16, ghostWisp); px(24, 17, ghostWisp)
+                if facing != .up {
+                    px(13, 7, ghostGlow); px(14, 7, ghostGlow)
+                    px(17, 7, ghostGlow); px(18, 7, ghostGlow)
+                }
+                let mist = SKColor(red: 0.5, green: 0.7, blue: 1.0, alpha: 0.2)
+                for x in 10...21 { px(x, 26, mist) }
+                for x in 12...19 { px(x, 27, mist) }
+
+            default:
+                break
+            }
 
             // -- Hat overlay --
             switch hatId {
             case "hat_crown":
                 let gold = ColorPalette.gold
                 let goldDark = SKColor(red: 0.7, green: 0.5, blue: 0.0, alpha: 1)
-                // Crown base
                 for x in 12...19 { px(x, 2, gold) }
                 for x in 12...19 { px(x, 3, goldDark) }
-                // Crown points
                 px(12, 0, gold); px(12, 1, gold)
                 px(15, 0, gold); px(15, 1, gold); px(16, 0, gold); px(16, 1, gold)
                 px(19, 0, gold); px(19, 1, gold)
-                // Jewels
                 px(14, 2, SKColor.red); px(17, 2, SKColor.blue)
             case "hat_halo":
                 let haloColor = SKColor(red: 1.0, green: 1.0, blue: 0.7, alpha: 0.8)
                 let haloBright = SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 0.9)
-                // Floating halo above head
                 for x in 11...20 { px(x, 0, haloColor) }
                 for x in 12...19 { px(x, 1, haloBright) }
                 px(11, 1, haloColor); px(20, 1, haloColor)
             case "hat_horns":
                 let hornColor = SKColor(red: 0.8, green: 0.0, blue: 0.0, alpha: 1)
                 let hornDark = SKColor(red: 0.5, green: 0.0, blue: 0.0, alpha: 1)
-                // Left horn
                 px(11, 3, hornColor); px(10, 2, hornColor); px(9, 1, hornDark); px(9, 0, hornDark)
-                // Right horn
                 px(20, 3, hornColor); px(21, 2, hornColor); px(22, 1, hornDark); px(22, 0, hornDark)
+            case "hat_wizard":
+                let wizPurple = SKColor(red: 0.4, green: 0.2, blue: 0.8, alpha: 1)
+                let wizDark = SKColor(red: 0.25, green: 0.1, blue: 0.55, alpha: 1)
+                let wizStar = SKColor(red: 1.0, green: 0.9, blue: 0.3, alpha: 1)
+                for x in 12...19 { px(x, 3, wizPurple) }
+                for x in 13...18 { px(x, 2, wizPurple) }
+                for x in 14...17 { px(x, 1, wizDark) }
+                px(15, 0, wizDark); px(16, 0, wizDark)
+                for x in 10...21 { px(x, 4, wizPurple) }
+                for x in 10...21 { px(x, 3, wizDark) }
+                px(17, 2, wizStar)
+            case "hat_headband":
+                let bandColor = SKColor(red: 1.0, green: 0.15, blue: 0.15, alpha: 1)
+                let bandDark = SKColor(red: 0.7, green: 0.1, blue: 0.1, alpha: 1)
+                for x in 11...20 { px(x, 4, bandColor) }
+                for x in 11...20 { px(x, 5, bandDark) }
+                px(21, 4, bandColor); px(22, 5, bandColor); px(23, 6, bandColor)
+                px(24, 7, bandDark); px(25, 8, bandDark)
+            case "hat_tophat":
+                let hatBlack = SKColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1)
+                let hatDark = SKColor(red: 0.08, green: 0.08, blue: 0.12, alpha: 1)
+                let hatBand = SKColor(red: 0.6, green: 0.0, blue: 0.0, alpha: 1)
+                for x in 9...22 { px(x, 3, hatBlack); px(x, 4, hatDark) }
+                for y in 0...2 { for x in 12...19 { px(x, y, hatBlack) } }
+                for x in 12...19 { px(x, 2, hatBand) }
+                for x in 13...18 { px(x, 0, self.lighter(hatBlack, by: 0.1)) }
+            case "hat_antenna":
+                let stalk = SKColor(red: 0.5, green: 0.5, blue: 0.55, alpha: 1)
+                let bulb = SKColor(red: 0.0, green: 1.0, blue: 0.3, alpha: 1)
+                let bulbGlow = SKColor(red: 0.0, green: 0.6, blue: 0.2, alpha: 0.5)
+                px(15, 2, stalk); px(16, 2, stalk)
+                px(15, 1, stalk); px(16, 1, stalk)
+                px(15, 0, stalk); px(16, 0, stalk)
+                px(14, 0, bulbGlow); px(17, 0, bulbGlow)
+                px(15, 0, bulb); px(16, 0, bulb)
             default:
                 break
             }
@@ -389,6 +474,9 @@ class SpriteFactory {
             case "Strafer": return self.drawStrafer(frame: frame)
             case "Bomber": return self.drawBomber(frame: frame)
             case "Necromancer": return self.drawNecromancer(frame: frame)
+            case "Juggernaut": return self.drawJuggernaut(frame: frame)
+            case "Wraith": return self.drawWraith(frame: frame)
+            case "Splitter": return self.drawSplitter(frame: frame)
             default: return self.drawShambler(frame: frame)
             }
         }
@@ -770,6 +858,233 @@ class SpriteFactory {
                 px(offset, skullY + 1, skullDark) // Shading
                 // Mini eye
                 px(offset, skullY, eyes)
+            }
+        }
+    }
+
+    // MARK: - Juggernaut (brown brute - 48x48)
+    private func drawJuggernaut(frame: Int) -> SKTexture {
+        return makeCanvas(size: 48) { px in
+            let body = ColorPalette.enemyJuggernaut
+            let dark = self.darker(body)
+            let armor = SKColor(red: 0.3, green: 0.25, blue: 0.18, alpha: 1)
+            let armorLight = SKColor(red: 0.5, green: 0.4, blue: 0.3, alpha: 1)
+            let eyes = SKColor(red: 1.0, green: 0.3, blue: 0.0, alpha: 1)
+            let outline = SKColor(red: 0.15, green: 0.1, blue: 0.05, alpha: 1)
+            let teeth = SKColor.white
+
+            // Massive head (small relative to body)
+            for y in 4...13 {
+                let hw = y < 7 ? (y - 3) : (y > 11 ? max(1, 13 - y) : 5)
+                for x in (23 - hw)...(24 + hw) { px(x, y, body) }
+            }
+            // Brow ridge
+            for x in 18...29 { px(x, 5, armor) }
+            for x in 19...28 { px(x, 6, armor) }
+            // Angry eyes (deep set)
+            px(20, 8, outline); px(21, 8, eyes); px(22, 8, eyes)
+            px(25, 8, eyes); px(26, 8, eyes); px(27, 8, outline)
+            // Snarling mouth
+            for x in 20...27 { px(x, 11, outline) }
+            px(21, 11, teeth); px(23, 11, teeth); px(25, 11, teeth)
+            for x in 20...27 { px(x, 12, dark) }
+
+            // Massive shoulders and torso
+            for y in 13...34 {
+                let hw: Int
+                if y < 17 { hw = 7 + (y - 13) * 2 } // Shoulders widen
+                else if y < 28 { hw = 15 } // Wide torso
+                else { hw = 15 - (y - 28) } // Taper to waist
+                for x in max(0, 23 - hw)...min(47, 24 + hw) {
+                    px(x, y, body)
+                }
+            }
+
+            // Armor plates on chest
+            for y in 16...26 {
+                let aw = min(y - 14, 10)
+                for x in (23 - aw)...(24 + aw) {
+                    if (x + y) % 3 == 0 { px(x, y, armor) }
+                }
+            }
+            // Center armor plate
+            for y in 17...25 {
+                px(22, y, armorLight); px(23, y, armor); px(24, y, armor); px(25, y, armorLight)
+            }
+            // Shoulder pads
+            for y in 13...17 {
+                for x in 6...12 { px(x, y, armor) }
+                for x in 35...41 { px(x, y, armor) }
+            }
+            // Spikes on shoulders
+            px(8, 11, armorLight); px(9, 12, armorLight)
+            px(38, 11, armorLight); px(39, 12, armorLight)
+
+            // Thick arms
+            let armShift = frame == 0 ? 0 : 1
+            for y in (17 + armShift)...(30 + armShift) {
+                for x in 3...10 { px(x, y, body) }
+                for x in 37...44 { px(x, y, body) }
+            }
+            // Fists
+            for y in (30 + armShift)...(33 + armShift) {
+                for x in 2...10 { px(x, y, dark) }
+                for x in 37...45 { px(x, y, dark) }
+            }
+
+            // Legs (thick, stomping)
+            let legS = frame == 1 ? 2 : 0
+            for y in 34...44 {
+                // Left leg
+                px(14 - legS, y, body); px(15 - legS, y, body)
+                px(16 - legS, y, body); px(17 - legS, y, body); px(18 - legS, y, body)
+                // Right leg
+                px(29 + legS, y, body); px(30 + legS, y, body)
+                px(31 + legS, y, body); px(32 + legS, y, body); px(33 + legS, y, body)
+            }
+            // Boots
+            for x in (12 - legS)...(19 - legS) { px(x, 45, dark); px(x, 44, dark) }
+            for x in (28 + legS)...(35 + legS) { px(x, 45, dark); px(x, 44, dark) }
+        }
+    }
+
+    // MARK: - Wraith (ghostly blue specter - 32x32)
+    private func drawWraith(frame: Int) -> SKTexture {
+        return makeCanvas(size: 32) { px in
+            let body = ColorPalette.enemyWraith
+            let dark = self.darker(body)
+            let glow = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 1)
+            let eyes = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 1)
+            let eyeGlow = SKColor(red: 0.0, green: 0.5, blue: 0.8, alpha: 0.4)
+            let wisp = SKColor(red: 0.4, green: 0.6, blue: 0.8, alpha: 0.5)
+
+            // Hood/head (pointed, spectral)
+            for y in 2...10 {
+                let hw = min(y - 1, 5)
+                for x in (15 - hw)...(16 + hw) { px(x, y, dark) }
+            }
+            // Inner face
+            for y in 5...10 {
+                let hw = min(y - 4, 4)
+                for x in (15 - hw)...(16 + hw) { px(x, y, body) }
+            }
+
+            // Glowing eyes
+            px(13, 7, eyeGlow); px(14, 7, eyes); px(15, 7, eyes)
+            px(16, 7, eyes); px(17, 7, eyes); px(18, 7, eyeGlow)
+            // Eye trail effect
+            let trailY = frame == 0 ? 8 : 9
+            px(13, trailY, eyeGlow); px(18, trailY, eyeGlow)
+
+            // Spectral body (fading, tattered)
+            for y in 11...26 {
+                let hw = min(6 + (y - 11) / 3, 9)
+                for x in max(0, 15 - hw)...min(31, 16 + hw) {
+                    // Tattered edges
+                    let edge = abs(x - 15) + abs(x - 16)
+                    if edge > hw - 2 && (x + y) % 2 == 0 {
+                        px(x, y, wisp)
+                    } else {
+                        px(x, y, body)
+                    }
+                }
+            }
+
+            // Spectral arms (reaching)
+            let armY = frame == 0 ? 0 : -1
+            for y in (12 + armY)...(18 + armY) {
+                px(5, y, wisp); px(6, y, body); px(7, y, body)
+                px(24, y, body); px(25, y, body); px(26, y, wisp)
+            }
+            // Claw-like fingers
+            px(4, 12 + armY, glow); px(5, 11 + armY, glow)
+            px(27, 12 + armY, glow); px(26, 11 + armY, glow)
+
+            // Tattered bottom (wispy tendrils)
+            let tendrilShift = frame == 1 ? 1 : 0
+            for i in 0..<5 {
+                let tx = 10 + i * 3 + (i % 2 == 0 ? tendrilShift : -tendrilShift)
+                for y in 26...min(31, 26 + 2 + i % 3) {
+                    px(tx, y, wisp)
+                }
+            }
+
+            // Faint glow aura
+            px(15, 1, glow); px(16, 1, glow)
+            px(10, 14, wisp); px(21, 14, wisp)
+        }
+    }
+
+    // MARK: - Splitter (green slime blob - 32x32)
+    private func drawSplitter(frame: Int) -> SKTexture {
+        return makeCanvas(size: 32) { px in
+            let body = ColorPalette.enemySplitter
+            let dark = self.darker(body)
+            let light = SKColor(red: 0.5, green: 1.0, blue: 0.5, alpha: 1)
+            let nucleus = SKColor(red: 0.1, green: 0.4, blue: 0.1, alpha: 1)
+            let eyes = ColorPalette.enemyEyes
+            let outline = SKColor(red: 0.1, green: 0.3, blue: 0.1, alpha: 1)
+
+            let squish = frame == 1
+
+            // Main blob body (squished animation)
+            let cx = 15, cy = squish ? 16 : 14
+            let rx = squish ? 12 : 10
+            let ry = squish ? 8 : 11
+
+            for y in 0..<32 {
+                for x in 0..<32 {
+                    let dx = x - cx
+                    let dy = y - cy
+                    let norm = (Double(dx * dx) / Double(rx * rx)) + (Double(dy * dy) / Double(ry * ry))
+                    if norm <= 1.0 {
+                        if norm > 0.8 {
+                            px(x, y, dark)
+                        } else if norm > 0.5 {
+                            px(x, y, body)
+                        } else {
+                            px(x, y, light)
+                        }
+                    }
+                }
+            }
+
+            // Nucleus (darker center)
+            for y in (cy - 2)...(cy + 2) {
+                for x in (cx - 2)...(cx + 2) {
+                    let dx = x - cx, dy = y - cy
+                    if dx * dx + dy * dy <= 5 { px(x, y, nucleus) }
+                }
+            }
+
+            // Eyes (goofy, on top)
+            let eyeY = squish ? 12 : 10
+            // Left eye
+            px(12, eyeY, SKColor.white); px(13, eyeY, SKColor.white)
+            px(12, eyeY + 1, SKColor.white); px(13, eyeY + 1, eyes)
+            // Right eye
+            px(18, eyeY, SKColor.white); px(19, eyeY, SKColor.white)
+            px(18, eyeY + 1, eyes); px(19, eyeY + 1, SKColor.white)
+
+            // Mouth (wobbly smile)
+            let mouthY = squish ? 15 : 13
+            px(13, mouthY, outline); px(14, mouthY, outline)
+            px(15, mouthY + 1, outline); px(16, mouthY + 1, outline)
+            px(17, mouthY, outline); px(18, mouthY, outline)
+
+            // Drip/bubbles
+            let dripShift = frame == 1 ? 1 : 0
+            px(10, cy + ry + dripShift, dark)
+            px(11, cy + ry + 1 + dripShift, dark)
+            px(20, cy + ry + dripShift, dark)
+            // Small bubble
+            px(21, cy - ry + 1, light)
+            px(9, cy - ry + 2, light)
+
+            // Division line hint (showing it wants to split)
+            for y in (cy - 3)...(cy + 3) {
+                px(cx, y, outline)
+                px(cx + 1, y, outline)
             }
         }
     }
@@ -1337,6 +1652,23 @@ class SpriteFactory {
         return tex
     }
 
+    // MARK: - Pause Icon
+
+    func pauseIconTexture() -> SKTexture {
+        let key = "pause_icon"
+        if let cached = textureCache[key] { return cached }
+        let tex = makeCanvas(size: 24) { px in
+            let c = ColorPalette.textPrimary
+            // Two vertical bars
+            for y in 4...19 {
+                for x in 7...9 { px(x, y, c) }
+                for x in 14...16 { px(x, y, c) }
+            }
+        }
+        textureCache[key] = tex
+        return tex
+    }
+
     // MARK: - Power-Up Icons
 
     func powerUpIconTexture(type: PowerUpType) -> SKTexture {
@@ -1407,17 +1739,6 @@ class SpriteFactory {
                     for x in 7...16 { px(x,16,ic); px(x,17,ic) }
                     px(7,6,ColorPalette.bulletEnemy); px(8,6,ColorPalette.bulletEnemy)
                     px(15,6,ColorPalette.bulletPlayer); px(16,6,ColorPalette.bulletPlayer)
-                case .rewindExtension:
-                    let ctr = 12
-                    for angle in stride(from: 0.0, through: 2.0 * .pi, by: 0.15) {
-                        let ox = ctr + Int(cos(angle) * 7)
-                        let oy = ctr + Int(sin(angle) * 7)
-                        px(ox, oy, ic)
-                    }
-                    for y in 8...12 { px(12, y, ic) }
-                    for x in 12...15 { px(x, 12, ic) }
-                    px(7,4,iconColor); px(8,5,iconColor); px(9,6,iconColor)
-
                 case .chainLightning:
                     // Forked lightning bolt
                     let bolt: [(Int,Int)] = [(14,4),(13,5),(12,6),(11,7),(10,8),(11,8),(12,8),(13,8),(12,9),(11,10),(10,11),(9,12),(10,13),(11,13),(12,13),(11,14),(10,15),(9,16),(8,17)]

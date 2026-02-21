@@ -132,17 +132,11 @@ class GameOverNode: SKNode {
         // Only respond after delay
         guard !isHidden else { return }
         onRestart?()
-        hide()
     }
 
     func hide() {
-        run(SKAction.sequence([
-            SKAction.fadeOut(withDuration: 0.3),
-            SKAction.run { [weak self] in
-                self?.removeAllChildren()
-                self?.isHidden = true
-                self?.alpha = 1
-            }
-        ]))
+        removeAllChildren()
+        isHidden = true
+        alpha = 1
     }
 }

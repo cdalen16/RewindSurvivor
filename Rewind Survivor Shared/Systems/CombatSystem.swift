@@ -39,8 +39,18 @@ class CombatSystem {
         updateOrbitals(deltaTime: deltaTime, player: player, enemies: enemies, scene: scene, gameState: gameState)
     }
 
+    // Track orbital kills for GameScene to process
+    struct OrbitalKill {
+        let enemy: EnemyNode
+        let position: CGPoint
+    }
+    var pendingOrbitalKills: [OrbitalKill] = []
+    var pendingOrbitalHits: [(CGPoint, CGFloat)] = [] // (position, damage) for damage numbers
+
     private func updateOrbitals(deltaTime: TimeInterval, player: PlayerNode, enemies: [EnemyNode], scene: SKScene, gameState: GameState) {
         let count = gameState.orbitalCount
+        pendingOrbitalKills.removeAll()
+        pendingOrbitalHits.removeAll()
 
         // Spawn/remove orbital nodes to match count
         while orbitalNodes.count < count {
@@ -49,10 +59,13 @@ class CombatSystem {
             orb.blendMode = .add
             orb.zPosition = 100
             orb.name = "orbital"
-            // Add glow
-            let glow = SKSpriteNode(color: ColorPalette.playerPrimary, size: CGSize(width: 24, height: 24))
-            glow.alpha = 0.25
+            // Add circular glow
+            let glow = SKShapeNode(circleOfRadius: 10)
+            glow.fillColor = ColorPalette.playerPrimary.withAlphaComponent(0.2)
+            glow.strokeColor = ColorPalette.playerPrimary.withAlphaComponent(0.4)
+            glow.lineWidth = 1
             glow.blendMode = .add
+            glow.name = "orbGlow"
             orb.addChild(glow)
             scene.addChild(orb)
             orbitalNodes.append(orb)
@@ -98,10 +111,12 @@ class CombatSystem {
                 if dist < hitRadius {
                     let damage = orbitalDamage * gameState.playerDamageMultiplier
                     let killed = enemy.takeDamage(damage)
-                    orbitalHitCooldowns[id] = 0.5 // Can't hit same enemy for 0.5s
+                    orbitalHitCooldowns[id] = 0.5
 
                     if killed {
-                        // Handled by the caller checking hp
+                        pendingOrbitalKills.append(OrbitalKill(enemy: enemy, position: enemy.position))
+                    } else {
+                        pendingOrbitalHits.append((enemy.position, damage))
                     }
 
                     // Hit flash on orbital
@@ -138,8 +153,6 @@ class CombatSystem {
             dx: target.position.x - player.position.x,
             dy: target.position.y - player.position.y
         ).normalized()
-
-        player.facingDirection = direction
 
         let baseCount = 1 + gameState.playerProjectileCountBonus
         var damage = GameConfig.playerBaseDamage * gameState.playerDamageMultiplier

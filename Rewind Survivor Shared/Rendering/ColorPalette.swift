@@ -23,6 +23,9 @@ struct ColorPalette {
     static let enemyFast = SKColor(red: 1.0, green: 0.933, blue: 0.0, alpha: 1.0)          // #FFEE00
     static let enemyTank = SKColor(red: 0.545, green: 0.0, blue: 0.0, alpha: 1.0)          // #8B0000
     static let enemyBoss = SKColor(red: 1.0, green: 0.0, blue: 1.0, alpha: 1.0)            // #FF00FF
+    static let enemyJuggernaut = SKColor(red: 0.4, green: 0.3, blue: 0.2, alpha: 1.0)       // Brown-grey brute
+    static let enemyWraith = SKColor(red: 0.5, green: 0.7, blue: 0.9, alpha: 1.0)          // Ghostly blue
+    static let enemySplitter = SKColor(red: 0.3, green: 0.8, blue: 0.3, alpha: 1.0)        // Green slime
     static let enemyOutline = SKColor(red: 0.2, green: 0.0, blue: 0.0, alpha: 1.0)         // #330000
     static let enemyEyes = SKColor(red: 1.0, green: 1.0, blue: 0.0, alpha: 1.0)            // #FFFF00
 

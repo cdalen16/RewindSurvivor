@@ -9,6 +9,7 @@ enum GamePhase {
     case gameOver
     case statsScreen
     case shopScreen
+    case paused
 }
 
 enum PowerUpType: String, CaseIterable {
@@ -21,7 +22,6 @@ enum PowerUpType: String, CaseIterable {
     case ghostDamage
     case orbitalShield
     case magnetRange
-    case rewindExtension
     case chainLightning
     case lifeSteal
     case explosiveRounds
@@ -40,7 +40,6 @@ enum PowerUpType: String, CaseIterable {
         case .ghostDamage: return 3
         case .orbitalShield: return 3
         case .magnetRange: return 3
-        case .rewindExtension: return 3
         case .chainLightning: return 3
         case .lifeSteal: return 3
         case .explosiveRounds: return 3
@@ -61,7 +60,6 @@ enum PowerUpType: String, CaseIterable {
         case .ghostDamage: return "Echo Power"
         case .orbitalShield: return "Orbital"
         case .magnetRange: return "Magnet"
-        case .rewindExtension: return "Time Warp"
         case .chainLightning: return "Chain Bolt"
         case .lifeSteal: return "Soul Siphon"
         case .explosiveRounds: return "Blast Shot"
@@ -82,7 +80,6 @@ enum PowerUpType: String, CaseIterable {
         case .ghostDamage: return "Ghosts hit harder"
         case .orbitalShield: return "Orbiting projectile"
         case .magnetRange: return "Wider pickup range"
-        case .rewindExtension: return "Longer ghost replay"
         case .chainLightning: return "Bolts chain to nearby foes"
         case .lifeSteal: return "Heal on damage dealt"
         case .explosiveRounds: return "Shots explode on hit"
@@ -103,7 +100,6 @@ enum PowerUpType: String, CaseIterable {
         case .ghostDamage: return ColorPalette.ghostCyan
         case .orbitalShield: return ColorPalette.powerUpPurple
         case .magnetRange: return ColorPalette.powerUpYellow
-        case .rewindExtension: return ColorPalette.rewindMagenta
         case .chainLightning: return ColorPalette.powerUpCyan
         case .lifeSteal: return ColorPalette.powerUpPink
         case .explosiveRounds: return ColorPalette.powerUpRed

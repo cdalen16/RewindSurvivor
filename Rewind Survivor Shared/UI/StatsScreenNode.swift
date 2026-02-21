@@ -146,7 +146,6 @@ class StatsScreenNode: SKNode {
                     SKAction.scale(to: 0.9, duration: 0.05),
                     SKAction.scale(to: 1.0, duration: 0.05),
                 ])) { [weak self] in
-                    self?.hide()
                     self?.onBack?()
                 }
             }
@@ -154,13 +153,8 @@ class StatsScreenNode: SKNode {
     }
 
     func hide() {
-        run(SKAction.sequence([
-            SKAction.fadeOut(withDuration: 0.3),
-            SKAction.run { [weak self] in
-                self?.removeAllChildren()
-                self?.isHidden = true
-                self?.alpha = 1
-            }
-        ]))
+        removeAllChildren()
+        isHidden = true
+        alpha = 1
     }
 }

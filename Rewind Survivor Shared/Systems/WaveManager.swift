@@ -147,6 +147,10 @@ class WaveManager {
         totalToSpawn = 0
     }
 
+    func registerEnemy(_ enemy: EnemyNode) {
+        activeEnemies.append(enemy)
+    }
+
     func spawnMinion(at position: CGPoint, scene: SKScene, wave: Int, ghostCount: Int) {
         let minion = EnemyNode(type: .shambler, wave: max(1, wave - 2), ghostCount: ghostCount)
         minion.position = position

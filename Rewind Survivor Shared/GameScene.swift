@@ -25,9 +25,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var gameOverScreen: GameOverNode!
     private var statsScreen: StatsScreenNode!
     private var shopScreen: ShopScreenNode!
+    private var pauseOverlay: PauseOverlayNode!
+    private var transitionOverlay: SKSpriteNode!
 
     // MARK: - Arena
     private var arenaNode: SKNode!
+    private var freezeAuraVisual: SKShapeNode?
 
     // MARK: - Timing
     private var lastUpdateTime: TimeInterval = 0
@@ -51,6 +54,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         backgroundColor = ColorPalette.arenaFloor
         physicsWorld.gravity = .zero
         physicsWorld.contactDelegate = self
+
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
 
         // Preload textures
         SpriteFactory.shared.preloadAllTextures()
@@ -105,6 +110,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Shop screen
         shopScreen = ShopScreenNode()
         cameraManager.cameraNode.addChild(shopScreen)
+
+        // Pause overlay
+        pauseOverlay = PauseOverlayNode()
+        cameraManager.cameraNode.addChild(pauseOverlay)
+
+        // Transition overlay (dip-to-black between screens)
+        transitionOverlay = SKSpriteNode(color: .black, size: size)
+        transitionOverlay.zPosition = 999
+        transitionOverlay.alpha = 0
+        transitionOverlay.isHidden = true
+        cameraManager.cameraNode.addChild(transitionOverlay)
 
         // Arena boundary physics
         let boundary = SKPhysicsBody(edgeLoopFrom: CGRect(
@@ -474,41 +490,115 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: - Game Flow
 
+    private func transition(swap: @escaping () -> Void) {
+        transitionOverlay.isHidden = false
+        transitionOverlay.alpha = 0
+        transitionOverlay.removeAllActions()
+        transitionOverlay.run(SKAction.sequence([
+            SKAction.fadeAlpha(to: 1.0, duration: 0.15),
+            SKAction.run { swap() },
+            SKAction.fadeAlpha(to: 0.0, duration: 0.15),
+            SKAction.run { [weak self] in
+                self?.transitionOverlay.isHidden = true
+            }
+        ]))
+    }
+
+    @objc private func appWillResignActive() {
+        pauseGame()
+    }
+
+    private func pauseGame() {
+        guard gameState.gamePhase == .playing else { return }
+        gameState.gamePhase = .paused
+        inputManager.reset()
+        pauseOverlay.show(screenSize: size,
+            onResume: { [weak self] in
+                self?.resumeGame()
+            },
+            onQuit: { [weak self] in
+                guard let self = self else { return }
+                self.isPaused = false
+                self.lastUpdateTime = 0
+                self.pauseOverlay.hide()
+                self.transition {
+                    self.cleanupGameplay()
+                    self.showMainMenu()
+                }
+            }
+        )
+        self.isPaused = true
+    }
+
+    private func resumeGame() {
+        self.isPaused = false
+        lastUpdateTime = 0
+        pauseOverlay.hide()
+        gameState.gamePhase = .playing
+    }
+
+    private func cleanupGameplay() {
+        waveManager.removeAll()
+        ghostPlayback.removeAll()
+        combatSystem.reset()
+        freezeAuraVisual?.removeFromParent()
+        freezeAuraVisual = nil
+        enumerateChildNodes(withName: "//coinPickup") { node, _ in node.removeFromParent() }
+    }
+
     private func showMainMenu() {
         gameState.gamePhase = .mainMenu
+        inputManager.reset()
         hud.hide()
         player.isHidden = true
         SpriteFactory.shared.invalidatePlayerTextures()
         mainMenu.show(screenSize: size,
             onPlay: { [weak self] in
-                self?.startNewGame()
+                guard let self = self else { return }
+                self.transition {
+                    self.mainMenu.hide()
+                    self.startNewGame()
+                }
             },
             onShop: { [weak self] in
-                self?.showShop()
+                guard let self = self else { return }
+                self.transition {
+                    self.mainMenu.hide()
+                    self.gameState.gamePhase = .shopScreen
+                    self.shopScreen.show(screenSize: self.size) { [weak self] in
+                        guard let self = self else { return }
+                        self.transition {
+                            self.shopScreen.hide()
+                            self.showMainMenu()
+                        }
+                    }
+                }
             },
             onStats: { [weak self] in
-                self?.showStats()
+                guard let self = self else { return }
+                self.transition {
+                    self.mainMenu.hide()
+                    self.gameState.gamePhase = .statsScreen
+                    self.statsScreen.show(screenSize: self.size) { [weak self] in
+                        guard let self = self else { return }
+                        self.transition {
+                            self.statsScreen.hide()
+                            self.showMainMenu()
+                        }
+                    }
+                }
             }
         )
-    }
-
-    private func showShop() {
-        gameState.gamePhase = .shopScreen
-        shopScreen.show(screenSize: size) { [weak self] in
-            self?.showMainMenu()
-        }
-    }
-
-    private func showStats() {
-        gameState.gamePhase = .statsScreen
-        statsScreen.show(screenSize: size) { [weak self] in
-            self?.showMainMenu()
-        }
     }
 
     private func startNewGame() {
         gameState.reset()
         gameState.gamePhase = .playing
+        inputManager.reset()
+
+        // Clean up freeze aura visual
+        freezeAuraVisual?.removeFromParent()
+        freezeAuraVisual = nil
 
         player.isHidden = false
         player.resetForNewGame(gameState: gameState)
@@ -587,6 +677,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Game over
             gameState.gamePhase = .gameOver
             gameState.isGameOver = true
+            inputManager.reset()
             ParticleFactory.playerDeathExplosion(at: player.position, scene: self)
             effectsManager.shakeExtreme()
             player.isHidden = true
@@ -605,7 +696,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
             gameOverTapDelay = 2.0
             gameOverScreen.show(screenSize: size, gameState: gameState) { [weak self] in
-                self?.showMainMenu()
+                guard let self = self else { return }
+                self.transition {
+                    self.gameOverScreen.hide()
+                    self.showMainMenu()
+                }
             }
         }
     }
@@ -650,6 +745,25 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         )
     }
 
+    // MARK: - Splitter Spawning
+
+    private func handleSplitterDeath(_ enemy: EnemyNode) {
+        guard enemy.behavior == .splitter && enemy.canSplit else { return }
+        let wave = gameState.currentWave
+        let ghostCount = ghostPlayback.activeGhosts.count
+        for i in 0..<2 {
+            let offset = CGFloat(i == 0 ? -20 : 20)
+            let child = EnemyNode(type: .splitter, wave: max(1, wave - 3), ghostCount: ghostCount)
+            child.canSplit = false
+            child.position = CGPoint(x: enemy.position.x + offset, y: enemy.position.y)
+            child.setScale(0.65)
+            child.alpha = 0
+            addChild(child)
+            waveManager.registerEnemy(child)
+            child.run(SKAction.fadeIn(withDuration: 0.2))
+        }
+    }
+
     // MARK: - Update Loop
 
     override func update(_ currentTime: TimeInterval) {
@@ -668,7 +782,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .gameOver:
             gameOverTapDelay -= dt
 
-        case .powerUpSelect, .mainMenu, .waveComplete, .statsScreen, .shopScreen:
+        case .paused, .powerUpSelect, .mainMenu, .waveComplete, .statsScreen, .shopScreen:
             break
         }
     }
@@ -708,6 +822,21 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameState: gameState
         )
 
+        // Handle orbital kills and hits
+        for kill in combatSystem.pendingOrbitalKills {
+            gameState.score += kill.enemy.pointValue
+            gameState.killsThisRun += 1
+            spawnCoinPickups(at: kill.position, value: kill.enemy.pointValue)
+            handleSplitterDeath(kill.enemy)
+            kill.enemy.die(scene: self)
+            waveManager.enemyDied(kill.enemy)
+            effectsManager.spawnScoreNumber(at: kill.position, score: kill.enemy.pointValue)
+            effectsManager.shakeLight()
+        }
+        for (hitPos, damage) in combatSystem.pendingOrbitalHits {
+            effectsManager.spawnDamageNumber(at: hitPos, text: "\(Int(damage))", color: ColorPalette.playerPrimary)
+        }
+
         // Enemies
         var targets: [SKNode] = [player]
         targets.append(contentsOf: ghostPlayback.ghostTargetNodes)
@@ -741,6 +870,29 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Freeze aura
         if gameState.freezeAuraRadius > 0 {
+            // Visual aura ring
+            if freezeAuraVisual == nil {
+                let aura = SKShapeNode(circleOfRadius: gameState.freezeAuraRadius)
+                aura.strokeColor = ColorPalette.freezeAuraBlue.withAlphaComponent(0.4)
+                aura.fillColor = ColorPalette.freezeAuraBlue.withAlphaComponent(0.06)
+                aura.lineWidth = 1.5
+                aura.zPosition = 95
+                aura.blendMode = .add
+                addChild(aura)
+                freezeAuraVisual = aura
+                // Gentle pulse
+                aura.run(SKAction.repeatForever(SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.5, duration: 1.0),
+                    SKAction.fadeAlpha(to: 1.0, duration: 1.0),
+                ])))
+            }
+            // Update size if stacks changed
+            if let aura = freezeAuraVisual {
+                let currentPath = CGPath(ellipseIn: CGRect(x: -gameState.freezeAuraRadius, y: -gameState.freezeAuraRadius, width: gameState.freezeAuraRadius * 2, height: gameState.freezeAuraRadius * 2), transform: nil)
+                aura.path = currentPath
+                aura.position = player.position
+            }
+
             for enemy in waveManager.activeEnemies {
                 let dx = enemy.position.x - player.position.x
                 let dy = enemy.position.y - player.position.y
@@ -751,6 +903,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     enemy.removeSlow()
                 }
             }
+        } else {
+            freezeAuraVisual?.removeFromParent()
+            freezeAuraVisual = nil
         }
 
         // Coin pickups + magnet
@@ -842,6 +997,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameState.score += points
             gameState.killsThisRun += 1
             spawnCoinPickups(at: enemy.position, value: points)
+            handleSplitterDeath(enemy)
             enemy.die(scene: self)
             waveManager.enemyDied(enemy)
             effectsManager.spawnScoreNumber(at: enemy.position, score: points)
@@ -871,6 +1027,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         gameState.score += other.pointValue
                         gameState.killsThisRun += 1
                         spawnCoinPickups(at: other.position, value: other.pointValue)
+                        handleSplitterDeath(other)
                         other.die(scene: self)
                         waveManager.enemyDied(other)
                         effectsManager.spawnScoreNumber(at: other.position, score: other.pointValue)
@@ -935,6 +1092,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameState.score += target.pointValue
             gameState.killsThisRun += 1
             spawnCoinPickups(at: target.position, value: target.pointValue)
+            handleSplitterDeath(target)
             target.die(scene: self)
             waveManager.enemyDied(target)
             effectsManager.spawnScoreNumber(at: target.position, score: target.pointValue)
@@ -1006,10 +1164,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 gameState.score += enemy.pointValue
                 gameState.killsThisRun += 1
                 spawnCoinPickups(at: enemy.position, value: enemy.pointValue)
+                handleSplitterDeath(enemy)
                 enemy.die(scene: self)
                 waveManager.enemyDied(enemy)
                 effectsManager.spawnScoreNumber(at: enemy.position, score: enemy.pointValue)
+            } else {
+                effectsManager.spawnDamageNumber(at: enemy.position, text: "\(Int(gameState.thornsDamage))", color: ColorPalette.powerUpPurple)
             }
+
+            // Visual thorns burst on the enemy
+            let thornSpark = SKSpriteNode(color: ColorPalette.powerUpPurple, size: CGSize(width: 8, height: 8))
+            thornSpark.position = enemy.position
+            thornSpark.zPosition = 95
+            thornSpark.blendMode = .add
+            addChild(thornSpark)
+            thornSpark.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.fadeOut(withDuration: 0.2),
+                    SKAction.scale(to: 3.0, duration: 0.2)
+                ]),
+                SKAction.removeFromParent()
+            ]))
         }
 
         if died {
@@ -1047,7 +1222,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         case .playing:
             for touch in touches {
+                let cameraLocation = touch.location(in: cameraManager.cameraNode)
+                if hud.handleTap(at: cameraLocation) {
+                    pauseGame()
+                    return
+                }
                 inputManager.touchBegan(touch, in: view)
+            }
+
+        case .paused:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                pauseOverlay.handleTouch(at: location)
             }
 
         case .powerUpSelect:
@@ -1070,7 +1256,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .shopScreen:
             for touch in touches {
                 let location = touch.location(in: cameraManager.cameraNode)
-                shopScreen.handleTouch(at: location)
+                shopScreen.handleTouchBegan(at: location)
             }
 
         default:
@@ -1080,26 +1266,50 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let view = self.view else { return }
-        if gameState.gamePhase == .playing {
+        switch gameState.gamePhase {
+        case .playing:
             for touch in touches {
                 inputManager.touchMoved(touch, in: view)
             }
+        case .shopScreen:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                shopScreen.handleTouchMoved(at: location)
+            }
+        default:
+            break
         }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if gameState.gamePhase == .playing {
+        switch gameState.gamePhase {
+        case .playing:
             for touch in touches {
                 inputManager.touchEnded(touch)
             }
+        case .shopScreen:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                shopScreen.handleTouchEnded(at: location)
+            }
+        default:
+            break
         }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if gameState.gamePhase == .playing {
+        switch gameState.gamePhase {
+        case .playing:
             for touch in touches {
                 inputManager.touchEnded(touch)
             }
+        case .shopScreen:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                shopScreen.handleTouchEnded(at: location)
+            }
+        default:
+            break
         }
     }
 }

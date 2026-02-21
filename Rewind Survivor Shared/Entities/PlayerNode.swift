@@ -86,7 +86,7 @@ class PlayerNode: SKSpriteNode {
                 trailTimer += deltaTime
                 if trailTimer >= trailInterval {
                     trailTimer = 0
-                    spawnTrailParticle(color: trailColor)
+                    spawnTrailParticle(color: trailColor, trailId: trailId)
                 }
             }
         } else {
@@ -140,25 +140,85 @@ class PlayerNode: SKSpriteNode {
         hp = min(hp + amount, maxHP)
     }
 
-    private func spawnTrailParticle(color: SKColor) {
+    private var rainbowHue: CGFloat = 0
+
+    private func spawnTrailParticle(color: SKColor, trailId: String = "") {
         guard let scene = self.scene else { return }
-        let particle = SKSpriteNode(color: color, size: CGSize(width: 4, height: 4))
-        particle.position = CGPoint(
-            x: position.x + CGFloat.random(in: -6...6),
-            y: position.y + CGFloat.random(in: -6...6)
-        )
-        particle.zPosition = 90
-        particle.alpha = 0.6
-        particle.blendMode = .add
-        scene.addChild(particle)
-        particle.run(SKAction.sequence([
-            SKAction.group([
-                SKAction.fadeOut(withDuration: 0.4),
-                SKAction.scale(to: 0.2, duration: 0.4),
-                SKAction.moveBy(x: CGFloat.random(in: -8...8), y: CGFloat.random(in: -8...8), duration: 0.4)
-            ]),
-            SKAction.removeFromParent()
-        ]))
+
+        switch trailId {
+        case "trail_rainbow":
+            // Cycle through rainbow hues
+            rainbowHue += 0.08
+            if rainbowHue > 1.0 { rainbowHue -= 1.0 }
+            let rainbowColor = SKColor(hue: rainbowHue, saturation: 1.0, brightness: 1.0, alpha: 1.0)
+            let particle = SKSpriteNode(color: rainbowColor, size: CGSize(width: 5, height: 5))
+            particle.position = CGPoint(x: position.x + .random(in: -5...5), y: position.y + .random(in: -5...5))
+            particle.zPosition = 90; particle.alpha = 0.7; particle.blendMode = .add
+            scene.addChild(particle)
+            particle.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.fadeOut(withDuration: 0.5),
+                    SKAction.scale(to: 0.3, duration: 0.5),
+                    SKAction.moveBy(x: .random(in: -10...10), y: .random(in: -10...10), duration: 0.5)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+
+        case "trail_spark":
+            // Electric spark — quick bright flash with jagged movement
+            let sparkColor = SKColor(red: 1.0, green: 1.0, blue: .random(in: 0.3...0.8), alpha: 1.0)
+            let particle = SKSpriteNode(color: sparkColor, size: CGSize(width: 3, height: 3))
+            particle.position = CGPoint(x: position.x + .random(in: -8...8), y: position.y + .random(in: -8...8))
+            particle.zPosition = 90; particle.alpha = 0.9; particle.blendMode = .add
+            scene.addChild(particle)
+            // Jagged path
+            let jag1 = SKAction.moveBy(x: .random(in: -15...15), y: .random(in: -15...15), duration: 0.08)
+            let jag2 = SKAction.moveBy(x: .random(in: -10...10), y: .random(in: -10...10), duration: 0.06)
+            particle.run(SKAction.sequence([
+                SKAction.group([jag1, SKAction.fadeAlpha(to: 0.5, duration: 0.08)]),
+                SKAction.group([jag2, SKAction.fadeOut(withDuration: 0.06), SKAction.scale(to: 0.1, duration: 0.06)]),
+                SKAction.removeFromParent()
+            ]))
+
+        case "trail_pixel":
+            // Glitch trail — square blocks that appear/disappear
+            let glitchColors = [color, color.withAlphaComponent(0.7), SKColor.white]
+            let gc = glitchColors[Int.random(in: 0..<glitchColors.count)]
+            let sz = CGFloat.random(in: 3...7)
+            let particle = SKSpriteNode(color: gc, size: CGSize(width: sz, height: sz))
+            particle.position = CGPoint(
+                x: position.x + CGFloat(Int.random(in: -8...8)),
+                y: position.y + CGFloat(Int.random(in: -8...8))
+            )
+            particle.zPosition = 90; particle.alpha = 0.8; particle.blendMode = .add
+            scene.addChild(particle)
+            // Glitch: appear, shift, disappear abruptly
+            particle.run(SKAction.sequence([
+                SKAction.wait(forDuration: Double.random(in: 0.05...0.15)),
+                SKAction.moveBy(x: CGFloat(Int.random(in: -6...6)), y: 0, duration: 0.02),
+                SKAction.wait(forDuration: Double.random(in: 0.05...0.1)),
+                SKAction.fadeOut(withDuration: 0.02),
+                SKAction.removeFromParent()
+            ]))
+
+        default:
+            // Standard trail particle (fire, ice, shadow)
+            let particle = SKSpriteNode(color: color, size: CGSize(width: 4, height: 4))
+            particle.position = CGPoint(
+                x: position.x + CGFloat.random(in: -6...6),
+                y: position.y + CGFloat.random(in: -6...6)
+            )
+            particle.zPosition = 90; particle.alpha = 0.6; particle.blendMode = .add
+            scene.addChild(particle)
+            particle.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.fadeOut(withDuration: 0.4),
+                    SKAction.scale(to: 0.2, duration: 0.4),
+                    SKAction.moveBy(x: CGFloat.random(in: -8...8), y: CGFloat.random(in: -8...8), duration: 0.4)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
     }
 
     func resetForNewGame(gameState: GameState) {

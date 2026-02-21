@@ -37,11 +37,6 @@ class PowerUpManager {
         case .magnetRange:
             gameState.pickupMagnetRange += 50
 
-        case .rewindExtension:
-            let durations: [TimeInterval] = [13, 16, 20]
-            let idx = min(currentStacks, durations.count - 1)
-            gameState.rewindDuration = durations[idx]
-
         case .chainLightning:
             gameState.chainLightningBounces += 1
 

@@ -27,6 +27,10 @@ class HUDNode: SKNode {
     // Ghost count
     private let ghostLabel: SKLabelNode
 
+    // Pause button
+    private let pauseButton: SKNode
+    private let pauseIcon: SKSpriteNode
+
     // Wave banner (appears between waves)
     private let waveBanner: SKLabelNode
     private let waveBannerSub: SKLabelNode
@@ -45,7 +49,7 @@ class HUDNode: SKNode {
 
         healthLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         healthLabel.fontSize = 9
-        healthLabel.fontColor = ColorPalette.textPrimary
+        healthLabel.fontColor = .black
 
         // Score
         scoreLabel = SKLabelNode(fontNamed: "Menlo-Bold")
@@ -98,6 +102,13 @@ class HUDNode: SKNode {
         waveBannerSub.fontColor = ColorPalette.textSecondary
         waveBannerSub.alpha = 0
 
+        // Pause button
+        pauseButton = SKNode()
+        pauseButton.name = "pauseButton"
+        pauseIcon = SKSpriteNode(texture: SpriteFactory.shared.pauseIconTexture(), size: CGSize(width: 28, height: 28))
+        pauseIcon.alpha = 0.7
+        pauseButton.addChild(pauseIcon)
+
         super.init()
 
         self.zPosition = 1000
@@ -119,6 +130,7 @@ class HUDNode: SKNode {
         addChild(ghostLabel)
         addChild(waveBanner)
         addChild(waveBannerSub)
+        addChild(pauseButton)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -182,6 +194,10 @@ class HUDNode: SKNode {
         ghostLabel.position = CGPoint(x: right - 40, y: top - 32)
         ghostLabel.verticalAlignmentMode = .center
         ghostLabel.horizontalAlignmentMode = .center
+
+        // Pause button - top right corner
+        pauseButton.position = CGPoint(x: right, y: top)
+        pauseButton.zPosition = 1
 
         // Wave banner - center of screen
         waveBanner.position = CGPoint(x: 0, y: 40)
@@ -290,6 +306,19 @@ class HUDNode: SKNode {
             ]),
             SKAction.removeFromParent()
         ]))
+    }
+
+    func handleTap(at point: CGPoint) -> Bool {
+        let dx = point.x - pauseButton.position.x
+        let dy = point.y - pauseButton.position.y
+        if abs(dx) < 30 && abs(dy) < 30 {
+            pauseButton.run(SKAction.sequence([
+                SKAction.scale(to: 0.8, duration: 0.05),
+                SKAction.scale(to: 1.0, duration: 0.05),
+            ]))
+            return true
+        }
+        return false
     }
 
     func hide() {
