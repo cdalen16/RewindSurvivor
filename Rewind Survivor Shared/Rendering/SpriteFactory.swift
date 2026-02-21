@@ -477,6 +477,7 @@ class SpriteFactory {
             case "Juggernaut": return self.drawJuggernaut(frame: frame)
             case "Wraith": return self.drawWraith(frame: frame)
             case "Splitter": return self.drawSplitter(frame: frame)
+            case "ShieldBearer": return self.drawShieldBearer(frame: frame)
             default: return self.drawShambler(frame: frame)
             }
         }
@@ -491,31 +492,35 @@ class SpriteFactory {
             let eyes = ColorPalette.enemyEyes
             let outline = ColorPalette.enemyOutline
             let teeth = SKColor.white
+            let bone = SKColor(red: 0.9, green: 0.85, blue: 0.7, alpha: 1)
 
-            // Head (rounded)
+            // Lurching torso lean between frames
+            let leanX = frame == 0 ? 0 : 1
+
+            // Head (rounded) — shifts with lean
             for y in 4...11 {
                 let hw = y < 6 ? (y - 3) : (y > 9 ? (11 - y + 1) : 4)
-                for x in (15 - hw)...(16 + hw) {
+                for x in (15 - hw + leanX)...(16 + hw + leanX) {
                     px(x, y, body)
                 }
-                px(15 - hw - 1, y, outline)
-                px(16 + hw + 1, y, outline)
+                px(15 - hw - 1 + leanX, y, outline)
+                px(16 + hw + 1 + leanX, y, outline)
             }
-            for x in 12...19 { px(x, 3, outline) }
-            for x in 12...19 { px(x, 12, outline) }
+            for x in (12 + leanX)...(19 + leanX) { px(x, 3, outline) }
+            for x in (12 + leanX)...(19 + leanX) { px(x, 12, outline) }
 
             // Sunken eyes
-            px(12, 6, outline); px(13, 6, outline); px(14, 6, outline)
-            px(17, 6, outline); px(18, 6, outline); px(19, 6, outline)
-            px(12, 7, outline); px(13, 7, eyes); px(14, 7, eyes)
-            px(17, 7, eyes); px(18, 7, eyes); px(19, 7, outline)
-            px(12, 8, outline); px(13, 8, eyes); px(14, 8, outline)
-            px(17, 8, outline); px(18, 8, eyes); px(19, 8, outline)
+            px(12 + leanX, 6, outline); px(13 + leanX, 6, outline); px(14 + leanX, 6, outline)
+            px(17 + leanX, 6, outline); px(18 + leanX, 6, outline); px(19 + leanX, 6, outline)
+            px(12 + leanX, 7, outline); px(13 + leanX, 7, eyes); px(14 + leanX, 7, eyes)
+            px(17 + leanX, 7, eyes); px(18 + leanX, 7, eyes); px(19 + leanX, 7, outline)
+            px(12 + leanX, 8, outline); px(13 + leanX, 8, eyes); px(14 + leanX, 8, outline)
+            px(17 + leanX, 8, outline); px(18 + leanX, 8, eyes); px(19 + leanX, 8, outline)
 
             // Mouth with teeth
-            for x in 13...18 { px(x, 10, outline) }
-            px(13, 10, teeth); px(15, 10, teeth); px(17, 10, teeth)
-            px(14, 11, dark); px(15, 11, dark); px(16, 11, dark)
+            for x in (13 + leanX)...(18 + leanX) { px(x, 10, outline) }
+            px(13 + leanX, 10, teeth); px(15 + leanX, 10, teeth); px(17 + leanX, 10, teeth)
+            px(14 + leanX, 11, dark); px(15 + leanX, 11, dark); px(16 + leanX, 11, dark)
 
             // Body - hunched
             for y in 12...21 {
@@ -524,29 +529,49 @@ class SpriteFactory {
                     px(x, y, flesh)
                 }
             }
+            // Exposed ribs
+            for i in 0..<3 {
+                px(11, 14 + i * 2, bone); px(12, 14 + i * 2, bone)
+            }
             // Belly wound
             for y in 15...17 {
                 for x in 14...17 { px(x, y, dark) }
             }
             px(15, 16, SKColor(red: 0.5, green: 0.1, blue: 0.0, alpha: 1))
 
-            // Arms reaching (animated)
-            let armY = frame == 0 ? 0 : -2
-            for y in (11 + armY)...(16 + armY) {
+            // Arms — contralateral swing with reach/claw motion
+            let leftArmEnd = frame == 0 ? 10 : 15     // Left arm reaches up in frame 0
+            let rightArmEnd = frame == 0 ? 15 : 10    // Right arm reaches up in frame 1
+            // Left arm
+            for y in leftArmEnd...(leftArmEnd + 5) {
                 px(6, y, flesh); px(7, y, flesh); px(8, y, flesh)
+            }
+            // Left clawed hand
+            px(4, leftArmEnd - 1, dark); px(5, leftArmEnd - 1, dark); px(6, leftArmEnd, dark)
+            px(3, leftArmEnd, dark)
+            // Right arm
+            for y in rightArmEnd...(rightArmEnd + 5) {
                 px(23, y, flesh); px(24, y, flesh); px(25, y, flesh)
             }
-            // Clawed hands
-            px(5, 10 + armY, dark); px(6, 10 + armY, dark)
-            px(25, 10 + armY, dark); px(26, 10 + armY, dark)
-            px(4, 11 + armY, dark)
-            px(27, 11 + armY, dark)
+            // Right clawed hand
+            px(26, rightArmEnd - 1, dark); px(27, rightArmEnd - 1, dark); px(25, rightArmEnd, dark)
+            px(28, rightArmEnd, dark)
 
-            // Legs (stumpy)
-            let legS = frame == 1 ? 1 : 0
-            for y in 22...25 {
-                px(11 - legS, y, dark); px(12 - legS, y, flesh); px(13 - legS, y, flesh)
-                px(18 + legS, y, flesh); px(19 + legS, y, flesh); px(20 + legS, y, dark)
+            // Legs — vertical stride (one extended, one shorter)
+            if frame == 0 {
+                // Left leg forward (extended lower)
+                for y in 22...27 { px(11, y, dark); px(12, y, flesh); px(13, y, flesh) }
+                px(10, 28, outline); px(11, 28, dark); px(12, 28, dark); px(13, 28, dark)
+                // Right leg back (shorter)
+                for y in 22...24 { px(18, y, flesh); px(19, y, flesh); px(20, y, dark) }
+                px(18, 25, dark); px(19, 25, dark); px(20, 25, dark)
+            } else {
+                // Right leg forward (extended lower)
+                for y in 22...27 { px(18, y, flesh); px(19, y, flesh); px(20, y, dark) }
+                px(18, 28, dark); px(19, 28, dark); px(20, 28, dark); px(21, 28, outline)
+                // Left leg back (shorter)
+                for y in 22...24 { px(11, y, dark); px(12, y, flesh); px(13, y, flesh) }
+                px(11, 25, dark); px(12, 25, dark); px(13, 25, dark)
             }
         }
     }
@@ -558,64 +583,83 @@ class SpriteFactory {
             let dark = self.darker(body, by: 0.2)
             let wing = SKColor(red: 1.0, green: 0.75, blue: 0.0, alpha: 1)
             let wingDark = SKColor(red: 0.7, green: 0.5, blue: 0.0, alpha: 1)
+            let wingHighlight = SKColor(red: 1.0, green: 0.9, blue: 0.4, alpha: 1)
             let eyes = SKColor.red
             let outline = SKColor(red: 0.4, green: 0.3, blue: 0.0, alpha: 1)
 
+            // Body bob: dips when wings up, rises when wings down
+            let bodyY = frame == 0 ? 2 : -1  // wings up = body dips down
+
             // Compact body
-            for y in 11...19 {
-                let hw = y < 14 ? (y - 10) : (y > 17 ? (19 - y) : 4)
+            for y in (11 + bodyY)...(19 + bodyY) {
+                let localY = y - bodyY
+                let hw = localY < 14 ? (localY - 10) : (localY > 17 ? (19 - localY) : 4)
                 for x in (15 - hw)...(16 + hw) { px(x, y, body) }
             }
             // Head (triangular, pointed)
-            for y in 7...11 {
-                let hw = y - 7
+            for y in (7 + bodyY)...(11 + bodyY) {
+                let localY = y - bodyY
+                let hw = localY - 7
                 for x in (15 - hw)...(16 + hw) { px(x, y, body) }
             }
             // Horns
-            px(13, 5, dark); px(12, 4, dark); px(11, 3, outline)
-            px(18, 5, dark); px(19, 4, dark); px(20, 3, outline)
+            px(13, 5 + bodyY, dark); px(12, 4 + bodyY, dark); px(11, 3 + bodyY, outline)
+            px(18, 5 + bodyY, dark); px(19, 4 + bodyY, dark); px(20, 3 + bodyY, outline)
 
             // Angry eyes
-            px(13, 10, eyes); px(14, 10, eyes)
-            px(17, 10, eyes); px(18, 10, eyes)
-            px(13, 11, SKColor(red: 0.7, green: 0.0, blue: 0.0, alpha: 1))
-            px(18, 11, SKColor(red: 0.7, green: 0.0, blue: 0.0, alpha: 1))
+            px(13, 10 + bodyY, eyes); px(14, 10 + bodyY, eyes)
+            px(17, 10 + bodyY, eyes); px(18, 10 + bodyY, eyes)
+            px(13, 11 + bodyY, SKColor(red: 0.7, green: 0.0, blue: 0.0, alpha: 1))
+            px(18, 11 + bodyY, SKColor(red: 0.7, green: 0.0, blue: 0.0, alpha: 1))
             // Fangs
-            px(14, 13, SKColor.white); px(17, 13, SKColor.white)
+            px(14, 13 + bodyY, SKColor.white); px(17, 13 + bodyY, SKColor.white)
 
-            // Wings (large, animated)
+            // Wings (wider 6px range flap, was 4px)
             let wingUp = frame == 0
-            let wingBaseY = wingUp ? 8 : 12
+            let wingBaseY = wingUp ? 6 : 14  // 8px range (was 4)
+            let wingSpan = 9  // wider wings (was 7)
             // Left wing
-            for y in wingBaseY...(wingBaseY + 7) {
-                let span = max(0, 7 - abs(y - (wingBaseY + 3)))
-                for x in (10 - span)...10 {
-                    if x >= 0 { px(x, y, wing) }
+            for y in wingBaseY...(wingBaseY + 8) {
+                let span = max(0, wingSpan - abs(y - (wingBaseY + 4)))
+                for x in max(0, 10 - span)...10 {
+                    px(x, y, wing)
+                }
+                // Wing highlight on leading edge
+                if wingUp && y == wingBaseY + 1 {
+                    for x in max(0, 10 - span + 1)...10 { px(x, y, wingHighlight) }
                 }
                 if 10 - span - 1 >= 0 { px(10 - span - 1, y, wingDark) }
             }
             // Right wing
-            for y in wingBaseY...(wingBaseY + 7) {
-                let span = max(0, 7 - abs(y - (wingBaseY + 3)))
-                for x in 21...(21 + span) {
-                    if x < 32 { px(x, y, wing) }
+            for y in wingBaseY...(wingBaseY + 8) {
+                let span = max(0, wingSpan - abs(y - (wingBaseY + 4)))
+                for x in 21...min(31, 21 + span) {
+                    px(x, y, wing)
+                }
+                if wingUp && y == wingBaseY + 1 {
+                    for x in 21...min(31, 21 + span - 1) { px(x, y, wingHighlight) }
                 }
                 if 21 + span + 1 < 32 { px(21 + span + 1, y, wingDark) }
             }
             // Wing membrane lines
-            for i in 0..<4 {
+            for i in 0..<5 {
                 let y = wingBaseY + 1 + i * 2
-                px(10 - i, y, outline)
-                px(21 + i, y, outline)
+                if y < 32 {
+                    px(max(0, 10 - i), y, outline)
+                    px(min(31, 21 + i), y, outline)
+                }
             }
 
-            // Tail
-            for y in 20...24 {
-                let shift = (y - 20) % 2 == 0 ? 0 : (frame == 0 ? 1 : -1)
-                px(15 + shift, y, dark); px(16 + shift, y, dark)
+            // Tail (wider wiggle)
+            for y in (20 + bodyY)...(25 + bodyY) {
+                let localY = y - bodyY
+                let shift = (localY - 20) % 2 == 0 ? 0 : (frame == 0 ? 2 : -2)
+                if y >= 0 && y < 32 {
+                    px(15 + shift, y, dark); px(16 + shift, y, dark)
+                }
             }
-            px(15, 25, outline)
-        }
+            if 26 + bodyY < 32 { px(frame == 0 ? 17 : 13, 26 + bodyY, outline) }
+         }
     }
 
     // MARK: - Strafer (orange hooded mage - 32x32)
@@ -628,6 +672,7 @@ class SpriteFactory {
             let staff = SKColor(red: 0.55, green: 0.55, blue: 0.65, alpha: 1)
             let orb = ColorPalette.bulletEnemy
             let orbGlow = SKColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1)
+            let magic = SKColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 0.6)
 
             // Hood (deep, shadowed)
             for y in 3...10 {
@@ -658,14 +703,23 @@ class SpriteFactory {
             for y in 14...24 {
                 px(13, y, dark); px(18, y, dark)
             }
-            // Robe hem
-            for x in 6...25 {
-                px(x, 26, dark)
-                if x % 3 == 0 { px(x, 27, dark) }
+            // Robe hem — sway between frames
+            let hemShift = frame == 0 ? -1 : 1
+            for x in (6 + hemShift)...(25 + hemShift) {
+                if x >= 0 && x < 32 {
+                    px(x, 26, dark)
+                    if x % 3 == 0 && x >= 0 && x < 32 { px(x, 27, dark) }
+                }
+            }
+            // Extra tattered hem pieces for sway effect
+            if frame == 0 {
+                px(5, 27, dark); px(6, 28, dark)
+            } else {
+                px(26, 27, dark); px(25, 28, dark)
             }
 
-            // Staff in right hand
-            let staffShift = frame == 1 ? -1 : 0
+            // Staff in right hand — 2px motion (was 1px)
+            let staffShift = frame == 1 ? -2 : 0
             for y in (4 + staffShift)...(24 + staffShift) {
                 px(24, y, staff)
             }
@@ -679,12 +733,24 @@ class SpriteFactory {
             px(24, 3 + staffShift, orbGlow) // Center glow
             // Orb sparkle
             px(23, 2 + staffShift, SKColor.white)
+            // Orb trail when staff raised
+            if frame == 1 {
+                px(24, 6, magic); px(25, 5, magic)
+            }
 
-            // Left arm (under robe)
-            for y in 13...17 {
+            // Left arm — casting gesture (raises/lowers 4px between frames)
+            let castArmEnd = frame == 0 ? 17 : 13
+            for y in castArmEnd...(castArmEnd + 4) {
                 px(7, y, robe); px(8, y, robe)
             }
-            px(6, 17, robe); px(7, 18, dark) // Reaching hand
+            // Casting hand with magic
+            px(6, castArmEnd, robe); px(5, castArmEnd, dark)
+            if frame == 1 {
+                // Magic particles from raised hand
+                px(5, castArmEnd - 1, magic); px(6, castArmEnd - 1, magic)
+                px(4, castArmEnd - 2, orbGlow)
+                px(7, castArmEnd - 2, orbGlow)
+            }
         }
     }
 
@@ -698,18 +764,20 @@ class SpriteFactory {
             let dark = self.darker(body)
             let shell = SKColor(red: 0.35, green: 0.05, blue: 0.05, alpha: 1)
             let eyes = ColorPalette.enemyEyes
+            let sparkWhite = SKColor.white
 
             let pulse = frame == 1 ? 1 : 0
+            // Waddle: body shifts 1px horizontally between frames
+            let waddle = frame == 0 ? -1 : 1
 
             // Spherical bomb body
-            let cx = 15, cy = 14
+            let cx = 15 + waddle, cy = 14
             let r = 9 + pulse
             for y in (cy - r)...(cy + r) {
                 for x in (cx - r)...(cx + r) {
                     let dx = x - cx, dy = y - cy
                     let distSq = dx * dx + dy * dy
                     if distSq <= r * r && x >= 0 && x < 32 && y >= 0 && y < 32 {
-                        // Gradient: darker at edges
                         if distSq > (r - 2) * (r - 2) {
                             px(x, y, dark)
                         } else if distSq > (r - 4) * (r - 4) {
@@ -721,14 +789,15 @@ class SpriteFactory {
                 }
             }
 
-            // Glowing cracks
+            // Glowing cracks — more dramatic in frame 1
             let crackColor = frame == 1 ? glow : hot
+            let crackLen = frame == 1 ? 7 : 6
             for i in 0..<4 {
                 let angle = CGFloat(i) * .pi / 2 + 0.3
-                for j in 3...6 {
+                for j in 3...crackLen {
                     let x = cx + Int(cos(angle) * CGFloat(j))
                     let y = cy + Int(sin(angle) * CGFloat(j))
-                    px(x, y, crackColor)
+                    if x >= 0 && x < 32 && y >= 0 && y < 32 { px(x, y, crackColor) }
                 }
             }
 
@@ -737,35 +806,49 @@ class SpriteFactory {
             for y in (cy - ir)...(cy + ir) {
                 for x in (cx - ir)...(cx + ir) {
                     let dx = x - cx, dy = y - cy
-                    if dx * dx + dy * dy <= ir * ir {
-                        px(x, y, hot)
-                    }
+                    if dx * dx + dy * dy <= ir * ir && x >= 0 && x < 32 { px(x, y, hot) }
                 }
             }
             // Bright center
-            px(cx, cy, core); px(cx + 1, cy, core)
-            px(cx, cy + 1, core); px(cx + 1, cy + 1, core)
+            px(cx, cy, core); px(min(31, cx + 1), cy, core)
+            px(cx, cy + 1, core); px(min(31, cx + 1), cy + 1, core)
 
-            // Eyes (angry, on top)
-            px(12, 11, eyes); px(13, 11, eyes)
-            px(18, 11, eyes); px(19, 11, eyes)
+            // Eyes (angry, on top) — shift with waddle
+            px(12 + waddle, 11, eyes); px(13 + waddle, 11, eyes)
+            px(18 + waddle, 11, eyes); px(19 + waddle, 11, eyes)
             // Angry eyebrows
-            px(11, 10, dark); px(12, 10, dark)
-            px(19, 10, dark); px(20, 10, dark)
+            px(11 + waddle, 10, dark); px(12 + waddle, 10, dark)
+            px(19 + waddle, 10, dark); px(20 + waddle, 10, dark)
 
             // Fuse on top
-            px(15, cy - r - 1, shell); px(16, cy - r - 1, shell)
-            px(15, cy - r - 2, glow); px(16, cy - r - 2, glow)
-            // Sparks
-            if frame == 1 {
-                px(14, cy - r - 3, core); px(17, cy - r - 3, core)
-                px(15, cy - r - 4, SKColor.white)
+            let fuseX = cx
+            px(fuseX, cy - r - 1, shell); px(min(31, fuseX + 1), cy - r - 1, shell)
+            px(fuseX, cy - r - 2, glow); px(min(31, fuseX + 1), cy - r - 2, glow)
+            // Dramatic sparks — both frames, more in frame 1
+            if cy - r - 3 >= 0 {
+                px(fuseX - 1, cy - r - 3, core); px(fuseX + 2, cy - r - 3, core)
+                px(fuseX, cy - r - 3, glow)
+            }
+            if frame == 1 && cy - r - 4 >= 0 {
+                px(fuseX, cy - r - 4, sparkWhite)
+                px(fuseX - 2, cy - r - 4, glow); px(fuseX + 3, cy - r - 4, glow)
+                if cy - r - 5 >= 0 { px(fuseX + 1, cy - r - 5, sparkWhite) }
             }
 
-            // Tiny feet
-            let legS = frame == 1 ? 1 : 0
-            px(11 - legS, cy + r + 1, body); px(12 - legS, cy + r + 1, body)
-            px(19 + legS, cy + r + 1, body); px(20 + legS, cy + r + 1, body)
+            // Tiny feet — vertical stride
+            if frame == 0 {
+                // Left foot forward (lower)
+                px(11 + waddle, cy + r + 1, body); px(12 + waddle, cy + r + 1, body)
+                px(11 + waddle, cy + r + 2, dark); px(12 + waddle, cy + r + 2, dark)
+                // Right foot back (higher)
+                px(19 + waddle, cy + r + 1, body); px(20 + waddle, cy + r + 1, body)
+            } else {
+                // Right foot forward (lower)
+                px(19 + waddle, cy + r + 1, body); px(20 + waddle, cy + r + 1, body)
+                px(19 + waddle, cy + r + 2, dark); px(20 + waddle, cy + r + 2, dark)
+                // Left foot back (higher)
+                px(11 + waddle, cy + r + 1, body); px(12 + waddle, cy + r + 1, body)
+            }
         }
     }
 
@@ -780,6 +863,7 @@ class SpriteFactory {
             let eyeGlow = SKColor(red: 0.0, green: 0.6, blue: 0.0, alpha: 0.4)
             let magic = ColorPalette.enemyBoss
             let crown = SKColor(red: 0.7, green: 0.0, blue: 0.9, alpha: 1)
+            let magicBright = SKColor(red: 1.0, green: 0.0, blue: 1.0, alpha: 0.6)
 
             // Crown/horns
             px(17, 1, crown); px(22, 1, crown)
@@ -827,37 +911,63 @@ class SpriteFactory {
                 px(x, 34, magic)
                 if x % 4 == 0 { px(x, 33, magic); px(x, 35, magic) }
             }
+            // Robe hem flow — shifts between frames
+            let hemShift = frame == 0 ? -1 : 1
+            for x in max(0, 6 + hemShift)...min(39, 33 + hemShift) {
+                if x % 3 == 0 { px(x, 36, robeDark) }
+            }
+            if frame == 0 {
+                px(6, 35, robeDark); px(5, 36, robeDark)
+            } else {
+                px(33, 35, robeDark); px(34, 36, robeDark)
+            }
             // Center robe detail
             for y in 16...30 { px(19, y, robeDark); px(20, y, robeDark) }
 
-            // Raised arms (animated)
-            let armUp = frame == 1 ? 3 : 0
-            for y in (10 - armUp)...(20 - armUp) {
+            // Arms — contralateral (left up when right down, 5px range)
+            let leftArmUp = frame == 0 ? 5 : 0
+            let rightArmUp = frame == 0 ? 0 : 5
+            for y in (10 - leftArmUp)...(20 - leftArmUp) {
                 px(5, y, robe); px(6, y, robe); px(7, y, robe)
+            }
+            for y in (10 - rightArmUp)...(20 - rightArmUp) {
                 px(32, y, robe); px(33, y, robe); px(34, y, robe)
             }
             // Skeletal hands with magic
-            px(4, 9 - armUp, skull); px(5, 9 - armUp, skull)
-            px(34, 9 - armUp, skull); px(35, 9 - armUp, skull)
+            px(4, 9 - leftArmUp, skull); px(5, 9 - leftArmUp, skull)
+            px(34, 9 - rightArmUp, skull); px(35, 9 - rightArmUp, skull)
             // Magic particles from hands
-            let magicY = 7 - armUp
-            if magicY >= 0 {
-                px(4, magicY, magic); px(5, magicY, magic)
-                px(35, magicY, magic); px(34, magicY, magic)
-                if frame == 1 {
-                    px(3, magicY - 1, SKColor(red: 1, green: 0, blue: 1, alpha: 0.5))
-                    px(36, magicY - 1, SKColor(red: 1, green: 0, blue: 1, alpha: 0.5))
+            let leftMagicY = 7 - leftArmUp
+            let rightMagicY = 7 - rightArmUp
+            if leftMagicY >= 0 {
+                px(4, leftMagicY, magic); px(5, leftMagicY, magic)
+                if leftArmUp > 0 {
+                    px(3, leftMagicY - 1, magicBright); px(6, leftMagicY - 1, magicBright)
+                }
+            }
+            if rightMagicY >= 0 {
+                px(34, rightMagicY, magic); px(35, rightMagicY, magic)
+                if rightArmUp > 0 {
+                    px(33, rightMagicY - 1, magicBright); px(36, rightMagicY - 1, magicBright)
                 }
             }
 
-            // Floating mini-skulls
-            let skullY = frame == 0 ? 4 : 7
-            for offset in [2, 37] {
-                px(offset, skullY, skull); px(offset + 1, skullY, skull)
-                px(offset, skullY + 1, skull); px(offset + 1, skullY + 1, skull)
-                px(offset, skullY + 1, skullDark) // Shading
-                // Mini eye
-                px(offset, skullY, eyes)
+            // Floating mini-skulls — orbit laterally between frames
+            let leftSkullX = frame == 0 ? 1 : 4
+            let rightSkullX = frame == 0 ? 38 : 35
+            let leftSkullY = frame == 0 ? 5 : 3
+            let rightSkullY = frame == 0 ? 3 : 5
+            // Left mini-skull
+            px(leftSkullX, leftSkullY, skull); px(leftSkullX + 1, leftSkullY, skull)
+            px(leftSkullX, leftSkullY + 1, skull); px(leftSkullX + 1, leftSkullY + 1, skull)
+            px(leftSkullX, leftSkullY + 1, skullDark)
+            px(leftSkullX, leftSkullY, eyes)
+            // Right mini-skull
+            if rightSkullX + 1 < 40 {
+                px(rightSkullX, rightSkullY, skull); px(rightSkullX + 1, rightSkullY, skull)
+                px(rightSkullX, rightSkullY + 1, skull); px(rightSkullX + 1, rightSkullY + 1, skull)
+                px(rightSkullX + 1, rightSkullY + 1, skullDark)
+                px(rightSkullX + 1, rightSkullY, eyes)
             }
         }
     }
@@ -872,6 +982,8 @@ class SpriteFactory {
             let eyes = SKColor(red: 1.0, green: 0.3, blue: 0.0, alpha: 1)
             let outline = SKColor(red: 0.15, green: 0.1, blue: 0.05, alpha: 1)
             let teeth = SKColor.white
+            let bootColor = SKColor(red: 0.2, green: 0.15, blue: 0.08, alpha: 1)
+            let bootMetal = SKColor(red: 0.35, green: 0.3, blue: 0.2, alpha: 1)
 
             // Massive head (small relative to body)
             for y in 4...13 {
@@ -892,9 +1004,9 @@ class SpriteFactory {
             // Massive shoulders and torso
             for y in 13...34 {
                 let hw: Int
-                if y < 17 { hw = 7 + (y - 13) * 2 } // Shoulders widen
-                else if y < 28 { hw = 15 } // Wide torso
-                else { hw = 15 - (y - 28) } // Taper to waist
+                if y < 17 { hw = 7 + (y - 13) * 2 }
+                else if y < 28 { hw = 15 }
+                else { hw = 15 - (y - 28) }
                 for x in max(0, 23 - hw)...min(47, 24 + hw) {
                     px(x, y, body)
                 }
@@ -920,31 +1032,53 @@ class SpriteFactory {
             px(8, 11, armorLight); px(9, 12, armorLight)
             px(38, 11, armorLight); px(39, 12, armorLight)
 
-            // Thick arms
-            let armShift = frame == 0 ? 0 : 1
-            for y in (17 + armShift)...(30 + armShift) {
+            // Thick arms — contralateral swing with 3px range
+            let leftArmShift = frame == 0 ? 0 : 3
+            let rightArmShift = frame == 0 ? 3 : 0
+            for y in (17 + leftArmShift)...(30 + leftArmShift) {
                 for x in 3...10 { px(x, y, body) }
+            }
+            for y in (17 + rightArmShift)...(30 + rightArmShift) {
                 for x in 37...44 { px(x, y, body) }
             }
             // Fists
-            for y in (30 + armShift)...(33 + armShift) {
+            for y in (30 + leftArmShift)...min(47, 33 + leftArmShift) {
                 for x in 2...10 { px(x, y, dark) }
+            }
+            for y in (30 + rightArmShift)...min(47, 33 + rightArmShift) {
                 for x in 37...45 { px(x, y, dark) }
             }
 
-            // Legs (thick, stomping)
-            let legS = frame == 1 ? 2 : 0
-            for y in 34...44 {
-                // Left leg
-                px(14 - legS, y, body); px(15 - legS, y, body)
-                px(16 - legS, y, body); px(17 - legS, y, body); px(18 - legS, y, body)
-                // Right leg
-                px(29 + legS, y, body); px(30 + legS, y, body)
-                px(31 + legS, y, body); px(32 + legS, y, body); px(33 + legS, y, body)
+            // Legs — heavy vertical stomp stride
+            if frame == 0 {
+                // Left leg forward (extended lower)
+                for y in 34...44 {
+                    px(14, y, body); px(15, y, body); px(16, y, body); px(17, y, body); px(18, y, body)
+                }
+                // Left heavy boot
+                for x in 12...20 { px(x, 45, bootColor); px(x, 46, bootColor) }
+                for x in 13...19 { px(x, 47, bootColor) }
+                px(12, 44, bootMetal); px(20, 44, bootMetal) // Boot studs
+                // Right leg back (shorter)
+                for y in 34...40 {
+                    px(29, y, body); px(30, y, body); px(31, y, body); px(32, y, body); px(33, y, body)
+                }
+                for x in 28...34 { px(x, 41, bootColor); px(x, 42, bootColor) }
+            } else {
+                // Right leg forward (extended lower)
+                for y in 34...44 {
+                    px(29, y, body); px(30, y, body); px(31, y, body); px(32, y, body); px(33, y, body)
+                }
+                // Right heavy boot
+                for x in 27...35 { px(x, 45, bootColor); px(x, 46, bootColor) }
+                for x in 28...34 { px(x, 47, bootColor) }
+                px(27, 44, bootMetal); px(35, 44, bootMetal) // Boot studs
+                // Left leg back (shorter)
+                for y in 34...40 {
+                    px(14, y, body); px(15, y, body); px(16, y, body); px(17, y, body); px(18, y, body)
+                }
+                for x in 13...19 { px(x, 41, bootColor); px(x, 42, bootColor) }
             }
-            // Boots
-            for x in (12 - legS)...(19 - legS) { px(x, 45, dark); px(x, 44, dark) }
-            for x in (28 + legS)...(35 + legS) { px(x, 45, dark); px(x, 44, dark) }
         }
     }
 
@@ -957,31 +1091,35 @@ class SpriteFactory {
             let eyes = SKColor(red: 0.0, green: 0.8, blue: 1.0, alpha: 1)
             let eyeGlow = SKColor(red: 0.0, green: 0.5, blue: 0.8, alpha: 0.4)
             let wisp = SKColor(red: 0.4, green: 0.6, blue: 0.8, alpha: 0.5)
+            let wispBright = SKColor(red: 0.5, green: 0.75, blue: 1.0, alpha: 0.3)
+
+            // Body sway: 1px left/right between frames
+            let sway = frame == 0 ? -1 : 1
 
             // Hood/head (pointed, spectral)
             for y in 2...10 {
                 let hw = min(y - 1, 5)
-                for x in (15 - hw)...(16 + hw) { px(x, y, dark) }
+                for x in (15 - hw + sway)...(16 + hw + sway) { px(x, y, dark) }
             }
             // Inner face
             for y in 5...10 {
                 let hw = min(y - 4, 4)
-                for x in (15 - hw)...(16 + hw) { px(x, y, body) }
+                for x in (15 - hw + sway)...(16 + hw + sway) { px(x, y, body) }
             }
 
             // Glowing eyes
-            px(13, 7, eyeGlow); px(14, 7, eyes); px(15, 7, eyes)
-            px(16, 7, eyes); px(17, 7, eyes); px(18, 7, eyeGlow)
-            // Eye trail effect
+            px(13 + sway, 7, eyeGlow); px(14 + sway, 7, eyes); px(15 + sway, 7, eyes)
+            px(16 + sway, 7, eyes); px(17 + sway, 7, eyes); px(18 + sway, 7, eyeGlow)
+            // Eye trail effect — longer trail
             let trailY = frame == 0 ? 8 : 9
-            px(13, trailY, eyeGlow); px(18, trailY, eyeGlow)
+            px(13 + sway, trailY, eyeGlow); px(18 + sway, trailY, eyeGlow)
+            px(13 + sway, trailY + 1, wispBright); px(18 + sway, trailY + 1, wispBright)
 
-            // Spectral body (fading, tattered)
+            // Spectral body (fading, tattered) — sways with head
             for y in 11...26 {
                 let hw = min(6 + (y - 11) / 3, 9)
-                for x in max(0, 15 - hw)...min(31, 16 + hw) {
-                    // Tattered edges
-                    let edge = abs(x - 15) + abs(x - 16)
+                for x in max(0, 15 - hw + sway)...min(31, 16 + hw + sway) {
+                    let edge = abs(x - (15 + sway)) + abs(x - (16 + sway))
                     if edge > hw - 2 && (x + y) % 2 == 0 {
                         px(x, y, wisp)
                     } else {
@@ -990,28 +1128,36 @@ class SpriteFactory {
                 }
             }
 
-            // Spectral arms (reaching)
-            let armY = frame == 0 ? 0 : -1
+            // Spectral arms — lift 3px (was 1px)
+            let armY = frame == 0 ? 0 : -3
             for y in (12 + armY)...(18 + armY) {
                 px(5, y, wisp); px(6, y, body); px(7, y, body)
                 px(24, y, body); px(25, y, body); px(26, y, wisp)
             }
-            // Claw-like fingers
-            px(4, 12 + armY, glow); px(5, 11 + armY, glow)
-            px(27, 12 + armY, glow); px(26, 11 + armY, glow)
+            // Claw-like fingers — more ghostly
+            px(4, 12 + armY, glow); px(5, 11 + armY, glow); px(3, 11 + armY, wispBright)
+            px(27, 12 + armY, glow); px(26, 11 + armY, glow); px(28, 11 + armY, wispBright)
 
-            // Tattered bottom (wispy tendrils)
-            let tendrilShift = frame == 1 ? 1 : 0
-            for i in 0..<5 {
-                let tx = 10 + i * 3 + (i % 2 == 0 ? tendrilShift : -tendrilShift)
-                for y in 26...min(31, 26 + 2 + i % 3) {
-                    px(tx, y, wisp)
+            // Tattered bottom (wispy tendrils) — more tendrils, 2px swing
+            let tendrilShift = frame == 0 ? -2 : 2
+            for i in 0..<7 {
+                let tx = 8 + i * 3 + (i % 2 == 0 ? tendrilShift : -tendrilShift) + sway
+                let tendrilLen = 2 + (i % 3)
+                for y in 26...min(31, 26 + tendrilLen) {
+                    if tx >= 0 && tx < 32 { px(tx, y, wisp) }
+                }
+                // Extra wisp at tendril tip
+                if tx >= 0 && tx < 32 && 27 + tendrilLen < 32 {
+                    px(tx, 27 + tendrilLen, wispBright)
                 }
             }
 
             // Faint glow aura
-            px(15, 1, glow); px(16, 1, glow)
+            px(15 + sway, 1, glow); px(16 + sway, 1, glow)
             px(10, 14, wisp); px(21, 14, wisp)
+            // Additional floating wisps
+            px(frame == 0 ? 8 : 23, 10, wispBright)
+            px(frame == 0 ? 22 : 9, 16, wispBright)
         }
     }
 
@@ -1024,13 +1170,14 @@ class SpriteFactory {
             let nucleus = SKColor(red: 0.1, green: 0.4, blue: 0.1, alpha: 1)
             let eyes = ColorPalette.enemyEyes
             let outline = SKColor(red: 0.1, green: 0.3, blue: 0.1, alpha: 1)
+            let splashDrop = SKColor(red: 0.3, green: 0.75, blue: 0.3, alpha: 0.7)
 
             let squish = frame == 1
 
-            // Main blob body (squished animation)
-            let cx = 15, cy = squish ? 16 : 14
-            let rx = squish ? 12 : 10
-            let ry = squish ? 8 : 11
+            // More dramatic squish: taller jump frame, flatter land frame
+            let cx = 15, cy = squish ? 18 : 12   // More vertical shift (was 16/14)
+            let rx = squish ? 14 : 9              // Wider when squished (was 12/10)
+            let ry = squish ? 6 : 13              // Flatter when squished, taller when jumping (was 8/11)
 
             for y in 0..<32 {
                 for x in 0..<32 {
@@ -1049,7 +1196,7 @@ class SpriteFactory {
                 }
             }
 
-            // Nucleus (darker center)
+            // Nucleus (darker center) — follows squish
             for y in (cy - 2)...(cy + 2) {
                 for x in (cx - 2)...(cx + 2) {
                     let dx = x - cx, dy = y - cy
@@ -1057,34 +1204,223 @@ class SpriteFactory {
                 }
             }
 
-            // Eyes (goofy, on top)
-            let eyeY = squish ? 12 : 10
+            // Eyes shift with squish — wider apart when squished, closer when tall
+            let eyeSpread = squish ? 4 : 3
+            let eyeY = squish ? cy - 3 : cy - 5
             // Left eye
-            px(12, eyeY, SKColor.white); px(13, eyeY, SKColor.white)
-            px(12, eyeY + 1, SKColor.white); px(13, eyeY + 1, eyes)
+            px(cx - eyeSpread - 1, eyeY, SKColor.white); px(cx - eyeSpread, eyeY, SKColor.white)
+            px(cx - eyeSpread - 1, eyeY + 1, SKColor.white); px(cx - eyeSpread, eyeY + 1, eyes)
             // Right eye
-            px(18, eyeY, SKColor.white); px(19, eyeY, SKColor.white)
-            px(18, eyeY + 1, eyes); px(19, eyeY + 1, SKColor.white)
+            px(cx + eyeSpread, eyeY, SKColor.white); px(cx + eyeSpread + 1, eyeY, SKColor.white)
+            px(cx + eyeSpread, eyeY + 1, eyes); px(cx + eyeSpread + 1, eyeY + 1, SKColor.white)
+            // Squished eyes get flattened (droopy lids)
+            if squish {
+                px(cx - eyeSpread - 1, eyeY, dark); px(cx + eyeSpread + 1, eyeY, dark)
+            }
 
-            // Mouth (wobbly smile)
-            let mouthY = squish ? 15 : 13
-            px(13, mouthY, outline); px(14, mouthY, outline)
-            px(15, mouthY + 1, outline); px(16, mouthY + 1, outline)
-            px(17, mouthY, outline); px(18, mouthY, outline)
+            // Mouth (wobbly smile) — wider when squished
+            let mouthY = squish ? cy - 1 : cy - 2
+            if squish {
+                px(cx - 3, mouthY, outline); px(cx - 2, mouthY, outline)
+                px(cx - 1, mouthY + 1, outline); px(cx, mouthY + 1, outline); px(cx + 1, mouthY + 1, outline)
+                px(cx + 2, mouthY, outline); px(cx + 3, mouthY, outline)
+            } else {
+                px(cx - 2, mouthY, outline); px(cx - 1, mouthY, outline)
+                px(cx, mouthY + 1, outline); px(cx + 1, mouthY + 1, outline)
+                px(cx + 2, mouthY, outline); px(cx + 3, mouthY, outline)
+            }
 
-            // Drip/bubbles
-            let dripShift = frame == 1 ? 1 : 0
-            px(10, cy + ry + dripShift, dark)
-            px(11, cy + ry + 1 + dripShift, dark)
-            px(20, cy + ry + dripShift, dark)
+            // Splash drips on landing (only in squish frame)
+            if squish {
+                // Multiple splash droplets flying outward
+                px(2, cy + ry - 1, splashDrop); px(3, cy + ry, splashDrop)
+                px(28, cy + ry - 1, splashDrop); px(27, cy + ry, splashDrop)
+                px(5, cy + ry + 1, splashDrop); px(6, cy + ry + 2, dark)
+                px(25, cy + ry + 1, splashDrop); px(24, cy + ry + 2, dark)
+                // Small puddle drips
+                px(9, cy + ry + 1, dark); px(21, cy + ry + 1, dark)
+                px(15, cy + ry + 1, dark); px(16, cy + ry + 1, dark)
+            } else {
+                // Drip/bubbles when in air
+                px(10, cy + ry + 1, dark); px(11, cy + ry + 2, dark)
+                px(20, cy + ry + 1, dark)
+            }
+
             // Small bubble
-            px(21, cy - ry + 1, light)
-            px(9, cy - ry + 2, light)
+            px(cx + 6, cy - ry + 1, light)
+            px(cx - 6, cy - ry + 2, light)
 
             // Division line hint (showing it wants to split)
             for y in (cy - 3)...(cy + 3) {
                 px(cx, y, outline)
                 px(cx + 1, y, outline)
+            }
+        }
+    }
+
+    // MARK: - Shield Bearer (armored knight with energy shield - 36x36)
+    private func drawShieldBearer(frame: Int) -> SKTexture {
+        return makeCanvas(size: 36) { px in
+            let armor = ColorPalette.enemyShieldBearer
+            let armorDark = SKColor(red: 0.4, green: 0.5, blue: 0.65, alpha: 1)
+            let armorLight = SKColor(red: 0.75, green: 0.82, blue: 0.92, alpha: 1)
+            let outline = SKColor(red: 0.2, green: 0.25, blue: 0.35, alpha: 1)
+            let eyes = SKColor(red: 1.0, green: 0.3, blue: 0.2, alpha: 1)
+            let shieldEdge = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1)
+            let shieldFill = SKColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 0.7)
+            let shieldGlow = SKColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 0.5)
+            let visor = SKColor(red: 0.2, green: 0.2, blue: 0.3, alpha: 1)
+
+            let walk = frame == 1
+
+            // --- Helmet (top) ---
+            // Rounded helmet with slit visor
+            for x in 14...22 { px(x, 2, outline) }
+            for x in 13...23 { px(x, 3, armorDark) }
+            for x in 12...24 { px(x, 4, armor) }
+            for x in 12...24 { px(x, 5, armor) }
+            // Visor slit
+            for x in 14...22 { px(x, 6, visor) }
+            // Eyes glow through visor
+            px(15, 6, eyes); px(16, 6, eyes)
+            px(20, 6, eyes); px(21, 6, eyes)
+            for x in 12...24 { px(x, 7, armor) }
+            // Chin guard
+            for x in 13...23 { px(x, 8, armorDark) }
+            for x in 14...22 { px(x, 9, outline) }
+
+            // --- Torso / Chest plate ---
+            for y in 10...17 {
+                for x in 13...23 {
+                    px(x, y, armor)
+                }
+                // Outline edges
+                px(12, y, outline)
+                px(24, y, outline)
+            }
+            // Chest plate highlights
+            for y in 11...15 {
+                px(17, y, armorLight); px(18, y, armorLight); px(19, y, armorLight)
+            }
+            // Chest plate dark center line
+            for y in 11...16 { px(18, y, armorDark) }
+            // Shoulder pauldrons
+            for x in 9...12 { px(x, 10, armorDark); px(x, 11, armor) }
+            for x in 24...27 { px(x, 10, armorDark); px(x, 11, armor) }
+            px(9, 10, outline); px(27, 10, outline)
+
+            // --- Arms ---
+            let leftArmY = walk ? 13 : 15   // Contralateral arm swing
+            let rightArmY = walk ? 15 : 13
+
+            // Left arm (shield arm — holds steady, slightly forward)
+            for y in 12...18 {
+                px(10, y, armor); px(11, y, armor)
+            }
+            px(10, 12, outline); px(11, 12, outline)
+            // Gauntlet
+            px(10, 18, armorDark); px(11, 18, armorDark)
+            px(10, 19, armorLight); px(11, 19, armorLight)
+
+            // Right arm (weapon arm swings)
+            for dy in 0...5 {
+                px(25, rightArmY + dy, armor); px(26, rightArmY + dy, armor)
+            }
+            px(25, rightArmY, outline); px(26, rightArmY, outline)
+            // Right gauntlet
+            px(25, rightArmY + 5, armorDark); px(26, rightArmY + 5, armorDark)
+            px(25, rightArmY + 6, armorLight); px(26, rightArmY + 6, armorLight)
+
+            // --- Weapon (mace/sword in right hand) ---
+            let weaponBaseY = rightArmY + 6
+            px(25, weaponBaseY + 1, outline)
+            px(25, weaponBaseY + 2, armorLight)
+            px(25, weaponBaseY + 3, armorLight)
+            px(24, weaponBaseY + 3, outline); px(26, weaponBaseY + 3, outline)
+
+            // --- Belt ---
+            for x in 13...23 { px(x, 18, armorDark) }
+            // Belt buckle
+            px(17, 18, armorLight); px(18, 18, armorLight); px(19, 18, armorLight)
+
+            // --- Legs with stride ---
+            let leftLegX = walk ? 14 : 15
+            let rightLegX = walk ? 21 : 20
+            let leftLegLen = walk ? 9 : 7
+            let rightLegLen = walk ? 7 : 9
+
+            // Left leg
+            for dy in 0..<leftLegLen {
+                px(leftLegX, 19 + dy, armor); px(leftLegX + 1, 19 + dy, armor)
+                px(leftLegX + 2, 19 + dy, armorDark)
+            }
+            // Left boot
+            let leftBootY = 19 + leftLegLen
+            px(leftLegX - 1, leftBootY, outline); px(leftLegX, leftBootY, armorDark)
+            px(leftLegX + 1, leftBootY, armorDark); px(leftLegX + 2, leftBootY, armorDark)
+            px(leftLegX + 3, leftBootY, outline)
+
+            // Right leg
+            for dy in 0..<rightLegLen {
+                px(rightLegX, 19 + dy, armorDark); px(rightLegX + 1, 19 + dy, armor)
+                px(rightLegX + 2, 19 + dy, armor)
+            }
+            // Right boot
+            let rightBootY = 19 + rightLegLen
+            px(rightLegX - 1, rightBootY, outline); px(rightLegX, rightBootY, armorDark)
+            px(rightLegX + 1, rightBootY, armorDark); px(rightLegX + 2, rightBootY, armorDark)
+            px(rightLegX + 3, rightBootY, outline)
+
+            // Energy shield is now a dynamic child node (see EnemyNode.setupShieldVisual)
+        }
+    }
+
+    // MARK: - Snowflake Texture (8x8 pixel art)
+
+    func snowflakeTexture(variant: Int = 0) -> SKTexture {
+        let key = "snowflake_\(variant)"
+        return cachedTexture(key: key) {
+            return self.makeCanvas(size: 8) { px in
+                let ice = SKColor(red: 0.85, green: 0.95, blue: 1.0, alpha: 1)
+                let bright = SKColor.white
+
+                if variant == 0 {
+                    // Classic 6-point snowflake
+                    // Vertical axis
+                    px(3, 0, ice); px(4, 0, ice)
+                    px(3, 1, bright); px(4, 1, bright)
+                    px(3, 6, bright); px(4, 6, bright)
+                    px(3, 7, ice); px(4, 7, ice)
+                    // Horizontal axis
+                    px(0, 3, ice); px(1, 3, bright); px(6, 3, bright); px(7, 3, ice)
+                    px(0, 4, ice); px(1, 4, bright); px(6, 4, bright); px(7, 4, ice)
+                    // Center
+                    px(3, 3, bright); px(4, 3, bright)
+                    px(3, 4, bright); px(4, 4, bright)
+                    // Diagonal arms
+                    px(2, 2, ice); px(5, 2, ice)
+                    px(2, 5, ice); px(5, 5, ice)
+                    px(1, 1, ice); px(6, 1, ice)
+                    px(1, 6, ice); px(6, 6, ice)
+                } else if variant == 1 {
+                    // Diamond snowflake
+                    px(3, 0, ice); px(4, 0, ice)
+                    px(2, 1, ice); px(3, 1, bright); px(4, 1, bright); px(5, 1, ice)
+                    px(1, 2, ice); px(3, 2, bright); px(4, 2, bright); px(6, 2, ice)
+                    px(0, 3, ice); px(1, 3, bright); px(2, 3, bright); px(3, 3, bright); px(4, 3, bright); px(5, 3, bright); px(6, 3, bright); px(7, 3, ice)
+                    px(0, 4, ice); px(1, 4, bright); px(2, 4, bright); px(3, 4, bright); px(4, 4, bright); px(5, 4, bright); px(6, 4, bright); px(7, 4, ice)
+                    px(1, 5, ice); px(3, 5, bright); px(4, 5, bright); px(6, 5, ice)
+                    px(2, 6, ice); px(3, 6, bright); px(4, 6, bright); px(5, 6, ice)
+                    px(3, 7, ice); px(4, 7, ice)
+                } else {
+                    // Simple dot crystal
+                    px(3, 1, ice); px(4, 1, ice)
+                    px(1, 3, ice); px(3, 3, bright); px(4, 3, bright); px(6, 3, ice)
+                    px(1, 4, ice); px(3, 4, bright); px(4, 4, bright); px(6, 4, ice)
+                    px(3, 6, ice); px(4, 6, ice)
+                    px(2, 2, bright); px(5, 2, bright)
+                    px(2, 5, bright); px(5, 5, bright)
+                }
             }
         }
     }

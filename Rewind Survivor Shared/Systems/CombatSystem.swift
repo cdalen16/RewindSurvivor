@@ -184,13 +184,14 @@ class CombatSystem {
     func fireGhostProjectile(from position: CGPoint,
                               toward target: EnemyNode,
                               scene: SKScene,
-                              gameState: GameState) {
+                              gameState: GameState,
+                              levelMultiplier: CGFloat = 1.0) {
         let direction = CGVector(
             dx: target.position.x - position.x,
             dy: target.position.y - position.y
         ).normalized()
 
-        let damage = GameConfig.playerBaseDamage * gameState.playerDamageMultiplier * gameState.playerGhostDamageMultiplier
+        let damage = GameConfig.playerBaseDamage * gameState.playerDamageMultiplier * gameState.playerGhostDamageMultiplier * levelMultiplier
         let speed = GameConfig.playerBaseProjectileSpeed
 
         let baseCount = 1 + gameState.playerProjectileCountBonus

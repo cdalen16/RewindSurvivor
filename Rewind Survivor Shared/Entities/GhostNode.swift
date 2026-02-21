@@ -8,6 +8,9 @@ class GhostNode: SKSpriteNode {
     let ghostIndex: Int
     var facingDirection: CGVector = CGVector(dx: 0, dy: -1)
 
+    // Ghost level (upgrades after orbit ring is full)
+    private(set) var ghostLevel: Int = 1
+
     // Leash: ghost stays near the player
     private let maxLeashDistance: CGFloat = 180
     private let followSpeed: CGFloat = 250
@@ -20,13 +23,18 @@ class GhostNode: SKSpriteNode {
 
     // Orbit offset based on ghost index (so multiple ghosts spread out)
     private var orbitAngle: CGFloat = 0
-    private let orbitRadius: CGFloat = 90
+    private var orbitRadius: CGFloat = 90
     private let orbitSpeed: CGFloat = 1.2
+
+    /// Damage multiplier from ghost level: +35% per level beyond 1
+    var levelDamageMultiplier: CGFloat {
+        return 1.0 + 0.35 * CGFloat(ghostLevel - 1)
+    }
 
     init(recording: GhostRecording, ghostIndex: Int) {
         self.recording = recording
         self.ghostIndex = ghostIndex
-        self.orbitAngle = CGFloat(ghostIndex) * (.pi * 2 / 8) // Spread evenly
+        self.orbitAngle = 0 // Will be set by redistributeOrbits
 
         let texture = SpriteFactory.shared.ghostPlayerTexture(facing: .down, frame: 0)
         super.init(texture: texture, color: .clear, size: CGSize(width: 32, height: 32))
@@ -43,6 +51,18 @@ class GhostNode: SKSpriteNode {
         glow.colorBlendFactor = 0.5
         glow.name = "glow"
         addChild(glow)
+
+        // Level label (hidden at level 1)
+        let label = SKLabelNode(fontNamed: "Menlo-Bold")
+        label.name = "levelLabel"
+        label.fontSize = 9
+        label.fontColor = ColorPalette.ghostCyan
+        label.verticalAlignmentMode = .bottom
+        label.horizontalAlignmentMode = .center
+        label.position = CGPoint(x: 0, y: 18)
+        label.zPosition = 2
+        label.isHidden = true
+        addChild(label)
 
         // Physics (ghosts don't collide with anything, just visual)
         let body = SKPhysicsBody(circleOfRadius: 12)
@@ -62,6 +82,60 @@ class GhostNode: SKSpriteNode {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: - Upgrade
+
+    func upgrade() {
+        ghostLevel += 1
+        updateLevelVisuals()
+
+        // Upgrade flash effect
+        let flash = SKAction.sequence([
+            SKAction.colorize(with: .white, colorBlendFactor: 0.8, duration: 0.1),
+            SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2)
+        ])
+        run(flash, withKey: "upgradeFlash")
+
+        // Scale pop
+        run(SKAction.sequence([
+            SKAction.scale(to: 1.3, duration: 0.1),
+            SKAction.scale(to: 1.0, duration: 0.15)
+        ]), withKey: "upgradePop")
+    }
+
+    private func updateLevelVisuals() {
+        // Update glow — bigger and brighter per level
+        if let glow = childNode(withName: "glow") as? SKSpriteNode {
+            let glowScale: CGFloat = 48 + CGFloat(ghostLevel - 1) * 8
+            glow.size = CGSize(width: glowScale, height: glowScale)
+            glow.alpha = min(0.25 + CGFloat(ghostLevel - 1) * 0.1, 0.65)
+
+            // Shift color from cyan toward white/gold at higher levels
+            if ghostLevel >= 4 {
+                glow.color = SKColor(red: 1.0, green: 0.9, blue: 0.5, alpha: 1)
+            } else if ghostLevel >= 2 {
+                glow.color = SKColor(red: 0.5, green: 0.9, blue: 1.0, alpha: 1)
+            }
+        }
+
+        // Update level label
+        if let label = childNode(withName: "levelLabel") as? SKLabelNode {
+            if ghostLevel >= 2 {
+                label.isHidden = false
+                label.text = "Lv\(ghostLevel)"
+                if ghostLevel >= 4 {
+                    label.fontColor = SKColor(red: 1.0, green: 0.85, blue: 0.3, alpha: 1)
+                } else {
+                    label.fontColor = SKColor(red: 0.5, green: 0.95, blue: 1.0, alpha: 1)
+                }
+            }
+        }
+
+        // Ghost itself gets slightly brighter at higher levels
+        alpha = min(GameConfig.ghostAlpha + CGFloat(ghostLevel - 1) * 0.08, 0.9)
+    }
+
+    // MARK: - Update
 
     func update(deltaTime: TimeInterval, scene: SKScene, gameState: GameState, enemies: [EnemyNode], combatSystem: CombatSystem, playerPosition: CGPoint) {
         guard !recording.snapshots.isEmpty else { return }
@@ -113,7 +187,7 @@ class GhostNode: SKSpriteNode {
             if attackTimer >= effectiveInterval {
                 attackTimer = 0
                 if let target = combatSystem.findNearestEnemy(to: position, enemies: enemies) {
-                    combatSystem.fireGhostProjectile(from: position, toward: target, scene: scene, gameState: gameState)
+                    combatSystem.fireGhostProjectile(from: position, toward: target, scene: scene, gameState: gameState, levelMultiplier: levelDamageMultiplier)
                 }
             }
         }
@@ -147,6 +221,14 @@ class GhostNode: SKSpriteNode {
             let oldest = trailNodes.removeFirst()
             oldest.removeFromParent()
         }
+    }
+
+    /// Reassign orbit parameters so ghosts are evenly spaced
+    func assignOrbitSlot(index: Int, totalGhosts: Int) {
+        let sliceAngle = (.pi * 2) / CGFloat(max(totalGhosts, 1))
+        orbitAngle = sliceAngle * CGFloat(index)
+        // Alternate radius slightly so ghosts on opposite sides don't overlap at center
+        orbitRadius = 80 + CGFloat(index % 2) * 30
     }
 
     func cleanup() {

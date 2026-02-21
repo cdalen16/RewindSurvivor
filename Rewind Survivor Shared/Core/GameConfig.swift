@@ -19,11 +19,21 @@ struct GameConfig {
     static let maxSnapshots: Int = 200
     static let ghostAlpha: CGFloat = 0.55
     static let ghostTintColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
-    static let maxActiveGhosts: Int = 8
     static let ghostDamageMultiplier: CGFloat = 0.7
 
     // MARK: - Scoring & Death Currency
-    static let deathThresholds: [Int] = [500, 1500, 3500, 7000, 12000, 20000, 35000, 60000]
+    // Scaling formula: each threshold requires progressively more score
+    // threshold(n) = 500 * 1.65^n, rounded to nearest 500
+    // e.g. 500, 825→1000, 1361→1500, 2246→2500, 3706→3500, 6114→6000, ...
+    static let deathThresholdBase: Double = 500
+    static let deathThresholdGrowth: Double = 1.90
+
+    static func deathThreshold(forIndex n: Int) -> Int {
+        let raw = deathThresholdBase * pow(deathThresholdGrowth, Double(n))
+        // Round to nearest 500 for clean display
+        return Int((raw / 500.0).rounded()) * 500
+    }
+
     static let initialDeaths: Int = 0
     static let basePointsPerKill: Int = 10
     static let pointsPerKillPerWave: Int = 2

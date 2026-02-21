@@ -82,4 +82,67 @@ class EffectsManager {
         guard let scene = scene else { return }
         DamageNumberNode.spawn(in: scene, text: "+\(score)", at: position, color: ColorPalette.gold)
     }
+
+    // MARK: - Shield Block Spark
+
+    func spawnShieldBlockSpark(at position: CGPoint, shieldDirection: CGVector) {
+        guard let scene = scene else { return }
+
+        // Bright flash at impact point
+        let flash = SKSpriteNode(color: ColorPalette.enemyShieldBearer, size: CGSize(width: 24, height: 24))
+        flash.position = position
+        flash.zPosition = 200
+        flash.blendMode = .add
+        flash.alpha = 0.9
+        scene.addChild(flash)
+        flash.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.fadeOut(withDuration: 0.15),
+                SKAction.scale(to: 2.0, duration: 0.15)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // Spark particles spray outward from shield face
+        let sparkCount = 8
+        for _ in 0..<sparkCount {
+            let spark = SKSpriteNode(color: .white, size: CGSize(width: 3, height: 3))
+            spark.position = position
+            spark.zPosition = 199
+            spark.blendMode = .add
+
+            // Spray in the shield-facing direction with spread
+            let baseAngle = atan2(shieldDirection.dy, shieldDirection.dx)
+            let angle = baseAngle + CGFloat.random(in: -(.pi / 3)...(.pi / 3))
+            let speed = CGFloat.random(in: 60...140)
+
+            scene.addChild(spark)
+            spark.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.move(by: CGVector(dx: cos(angle) * speed * 0.25, dy: sin(angle) * speed * 0.25), duration: 0.25),
+                    SKAction.fadeOut(withDuration: 0.25),
+                    SKAction.scale(to: 0.2, duration: 0.25)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
+
+        // Small shield shimmer ring
+        let ring = SKShapeNode(circleOfRadius: 8)
+        ring.strokeColor = ColorPalette.enemyShieldBearer
+        ring.fillColor = .clear
+        ring.lineWidth = 2
+        ring.position = position
+        ring.zPosition = 198
+        ring.alpha = 0.6
+        ring.blendMode = .add
+        scene.addChild(ring)
+        ring.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: 4.0, duration: 0.2),
+                SKAction.fadeOut(withDuration: 0.2)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+    }
 }

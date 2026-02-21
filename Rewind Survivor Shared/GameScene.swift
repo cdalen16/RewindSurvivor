@@ -30,7 +30,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: - Arena
     private var arenaNode: SKNode!
-    private var freezeAuraVisual: SKShapeNode?
+    private var freezeAuraContainer: SKNode?
 
     // MARK: - Timing
     private var lastUpdateTime: TimeInterval = 0
@@ -541,8 +541,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         waveManager.removeAll()
         ghostPlayback.removeAll()
         combatSystem.reset()
-        freezeAuraVisual?.removeFromParent()
-        freezeAuraVisual = nil
+        freezeAuraContainer?.removeFromParent()
+        freezeAuraContainer = nil
         enumerateChildNodes(withName: "//coinPickup") { node, _ in node.removeFromParent() }
     }
 
@@ -597,8 +597,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         inputManager.reset()
 
         // Clean up freeze aura visual
-        freezeAuraVisual?.removeFromParent()
-        freezeAuraVisual = nil
+        freezeAuraContainer?.removeFromParent()
+        freezeAuraContainer = nil
 
         player.isHidden = false
         player.resetForNewGame(gameState: gameState)
@@ -870,27 +870,137 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         // Freeze aura
         if gameState.freezeAuraRadius > 0 {
-            // Visual aura ring
-            if freezeAuraVisual == nil {
-                let aura = SKShapeNode(circleOfRadius: gameState.freezeAuraRadius)
-                aura.strokeColor = ColorPalette.freezeAuraBlue.withAlphaComponent(0.4)
-                aura.fillColor = ColorPalette.freezeAuraBlue.withAlphaComponent(0.06)
-                aura.lineWidth = 1.5
-                aura.zPosition = 95
-                aura.blendMode = .add
-                addChild(aura)
-                freezeAuraVisual = aura
-                // Gentle pulse
-                aura.run(SKAction.repeatForever(SKAction.sequence([
-                    SKAction.fadeAlpha(to: 0.5, duration: 1.0),
-                    SKAction.fadeAlpha(to: 1.0, duration: 1.0),
+            let radius = gameState.freezeAuraRadius
+
+            // Build container if needed
+            if freezeAuraContainer == nil {
+                let container = SKNode()
+                container.name = "freezeAuraContainer"
+                container.zPosition = 95
+
+                // Layer 1: Outer frost ring — thick, bright border
+                let outerRing = SKShapeNode(circleOfRadius: radius)
+                outerRing.name = "outerRing"
+                outerRing.strokeColor = SKColor(red: 0.6, green: 0.85, blue: 1.0, alpha: 0.7)
+                outerRing.fillColor = .clear
+                outerRing.lineWidth = 3.5
+                outerRing.glowWidth = 4.0
+                outerRing.blendMode = .add
+                outerRing.run(SKAction.repeatForever(SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.5, duration: 0.8),
+                    SKAction.fadeAlpha(to: 1.0, duration: 0.8),
                 ])))
+                container.addChild(outerRing)
+
+                // Layer 2: Inner fill — noticeably visible frost tint
+                let innerFill = SKShapeNode(circleOfRadius: radius)
+                innerFill.name = "innerFill"
+                innerFill.strokeColor = .clear
+                innerFill.fillColor = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 0.18)
+                innerFill.blendMode = .add
+                container.addChild(innerFill)
+
+                // Layer 3: Core glow — brighter center pool
+                let coreGlow = SKShapeNode(circleOfRadius: radius * 0.4)
+                coreGlow.name = "coreGlow"
+                coreGlow.strokeColor = .clear
+                coreGlow.fillColor = SKColor(red: 0.6, green: 0.88, blue: 1.0, alpha: 0.12)
+                coreGlow.blendMode = .add
+                coreGlow.run(SKAction.repeatForever(SKAction.sequence([
+                    SKAction.fadeAlpha(to: 0.06, duration: 1.2),
+                    SKAction.fadeAlpha(to: 0.18, duration: 1.2),
+                ])))
+                container.addChild(coreGlow)
+
+                // Layer 4: Drifting snowflakes (8 inside the aura)
+                for i in 0..<8 {
+                    let variant = i % 3
+                    let tex = SpriteFactory.shared.snowflakeTexture(variant: variant)
+                    let flakeSize: CGFloat = CGFloat.random(in: 14...22)
+                    let snowflake = SKSpriteNode(texture: tex, size: CGSize(width: flakeSize, height: flakeSize))
+                    snowflake.name = "snowflake_\(i)"
+                    snowflake.blendMode = .add
+                    snowflake.alpha = 0
+                    snowflake.zRotation = CGFloat.random(in: 0...(2 * .pi))
+                    container.addChild(snowflake)
+                }
+
+                // Layer 5: Sparkle twinkles (8 random positions)
+                for i in 0..<8 {
+                    let sparkle = SKSpriteNode(color: SKColor.white, size: CGSize(width: 2, height: 2))
+                    sparkle.name = "iceSparkle_\(i)"
+                    sparkle.blendMode = .add
+                    sparkle.alpha = 0
+                    container.addChild(sparkle)
+                }
+
+                addChild(container)
+                freezeAuraContainer = container
             }
-            // Update size if stacks changed
-            if let aura = freezeAuraVisual {
-                let currentPath = CGPath(ellipseIn: CGRect(x: -gameState.freezeAuraRadius, y: -gameState.freezeAuraRadius, width: gameState.freezeAuraRadius * 2, height: gameState.freezeAuraRadius * 2), transform: nil)
-                aura.path = currentPath
-                aura.position = player.position
+
+            // Update container position to follow player
+            if let container = freezeAuraContainer {
+                container.position = player.position
+
+                // Update ring/fill sizes if radius changed
+                if let outerRing = container.childNode(withName: "outerRing") as? SKShapeNode {
+                    let newPath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
+                    outerRing.path = newPath
+                }
+                if let innerFill = container.childNode(withName: "innerFill") as? SKShapeNode {
+                    let newPath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
+                    innerFill.path = newPath
+                }
+                if let coreGlow = container.childNode(withName: "coreGlow") as? SKShapeNode {
+                    let coreR = radius * 0.4
+                    coreGlow.path = CGPath(ellipseIn: CGRect(x: -coreR, y: -coreR, width: coreR * 2, height: coreR * 2), transform: nil)
+                }
+
+                // Update drifting snowflakes — float gently inside the aura
+                for i in 0..<8 {
+                    if let snowflake = container.childNode(withName: "snowflake_\(i)") as? SKSpriteNode {
+                        if snowflake.alpha <= 0.01 && !snowflake.hasActions() {
+                            // Spawn at random position inside the aura, drift downward and rotate
+                            let spawnAngle = CGFloat.random(in: 0...(2 * .pi))
+                            let spawnDist = CGFloat.random(in: 0...(radius * 0.8))
+                            snowflake.position = CGPoint(x: cos(spawnAngle) * spawnDist, y: sin(spawnAngle) * spawnDist)
+                            snowflake.alpha = 0
+                            snowflake.setScale(CGFloat.random(in: 0.8...1.2))
+
+                            let driftDuration = CGFloat.random(in: 1.5...3.0)
+                            let driftX = CGFloat.random(in: -20...20)
+                            let driftY = CGFloat.random(in: -25 ... -10)
+                            let spin = CGFloat.random(in: -1.5...1.5)
+                            snowflake.run(SKAction.sequence([
+                                SKAction.group([
+                                    SKAction.fadeAlpha(to: CGFloat.random(in: 0.4...0.75), duration: 0.3),
+                                    SKAction.move(by: CGVector(dx: driftX * 0.3, dy: driftY * 0.3), duration: TimeInterval(driftDuration * 0.3)),
+                                    SKAction.rotate(byAngle: spin * 0.3, duration: TimeInterval(driftDuration * 0.3))
+                                ]),
+                                SKAction.group([
+                                    SKAction.move(by: CGVector(dx: driftX * 0.7, dy: driftY * 0.7), duration: TimeInterval(driftDuration * 0.7)),
+                                    SKAction.rotate(byAngle: spin * 0.7, duration: TimeInterval(driftDuration * 0.7)),
+                                    SKAction.fadeOut(withDuration: TimeInterval(driftDuration * 0.7))
+                                ])
+                            ]), withKey: "snowflakeDrift")
+                        }
+                    }
+                }
+
+                // Update sparkles — twinkle at random positions
+                for i in 0..<8 {
+                    if let sparkle = container.childNode(withName: "iceSparkle_\(i)") as? SKSpriteNode {
+                        if sparkle.alpha <= 0.01 && !sparkle.hasActions() {
+                            let angle = CGFloat.random(in: 0...(2 * .pi))
+                            let dist = CGFloat.random(in: 0...(radius * 0.9))
+                            sparkle.position = CGPoint(x: cos(angle) * dist, y: sin(angle) * dist)
+                            sparkle.run(SKAction.sequence([
+                                SKAction.fadeAlpha(to: CGFloat.random(in: 0.5...0.9), duration: CGFloat.random(in: 0.15...0.3)),
+                                SKAction.fadeOut(withDuration: CGFloat.random(in: 0.2...0.5))
+                            ]), withKey: "sparkleAnim")
+                        }
+                    }
+                }
             }
 
             for enemy in waveManager.activeEnemies {
@@ -904,8 +1014,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 }
             }
         } else {
-            freezeAuraVisual?.removeFromParent()
-            freezeAuraVisual = nil
+            freezeAuraContainer?.removeFromParent()
+            freezeAuraContainer = nil
         }
 
         // Coin pickups + magnet
@@ -983,6 +1093,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard let projectile = projectile, let enemy = enemy else { return }
         guard enemy.parent != nil && enemy.hp > 0 else { return }
 
+        // Shield Bearer: block projectiles hitting from the front
+        if enemy.behavior == .shieldBearer {
+            let incomingDir = projectile.projectileVelocity.normalized()
+            let dot = enemy.shieldFacingDirection.dx * incomingDir.dx + enemy.shieldFacingDirection.dy * incomingDir.dy
+            if dot < 0 {
+                // Projectile hitting the shielded side — block it
+                effectsManager.spawnShieldBlockSpark(at: enemy.position, shieldDirection: enemy.shieldFacingDirection)
+                projectile.removeFromParent()
+                return
+            }
+        }
+
         let damage = projectile.damage
         let killed = enemy.takeDamage(damage)
 
@@ -1034,17 +1156,85 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                 }
             }
-            // Visual explosion
-            let flash = SKSpriteNode(color: .orange, size: CGSize(width: gameState.explosionRadius * 2, height: gameState.explosionRadius * 2))
-            flash.position = hitPos
-            flash.zPosition = 85
-            flash.blendMode = .add
-            flash.alpha = 0.4
-            addChild(flash)
-            flash.run(SKAction.sequence([
-                SKAction.group([SKAction.fadeOut(withDuration: 0.2), SKAction.scale(to: 1.3, duration: 0.2)]),
+            // Visual explosion — 4 layers
+            let expRadius = gameState.explosionRadius
+
+            // Layer 1: Bright center flash (white/yellow)
+            let centerFlash = SKShapeNode(circleOfRadius: expRadius * 0.3)
+            centerFlash.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.7, alpha: 1.0)
+            centerFlash.strokeColor = SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 0.8)
+            centerFlash.lineWidth = 2
+            centerFlash.position = hitPos
+            centerFlash.zPosition = 88
+            centerFlash.blendMode = .add
+            addChild(centerFlash)
+            centerFlash.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: 2.5, duration: 0.15),
+                    SKAction.fadeOut(withDuration: 0.15)
+                ]),
                 SKAction.removeFromParent()
             ]))
+
+            // Layer 2: Orange fireball
+            let fireball = SKShapeNode(circleOfRadius: expRadius * 0.5)
+            fireball.fillColor = SKColor(red: 1.0, green: 0.45, blue: 0.0, alpha: 0.7)
+            fireball.strokeColor = SKColor(red: 1.0, green: 0.6, blue: 0.1, alpha: 0.5)
+            fireball.lineWidth = 3
+            fireball.position = hitPos
+            fireball.zPosition = 87
+            fireball.blendMode = .add
+            addChild(fireball)
+            fireball.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: 2.0, duration: 0.25),
+                    SKAction.fadeOut(withDuration: 0.25)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+
+            // Layer 3: Shockwave ring
+            let shockwave = SKShapeNode(circleOfRadius: expRadius * 0.2)
+            shockwave.fillColor = .clear
+            shockwave.strokeColor = SKColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 0.8)
+            shockwave.lineWidth = 2.5
+            shockwave.position = hitPos
+            shockwave.zPosition = 86
+            shockwave.blendMode = .add
+            addChild(shockwave)
+            shockwave.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: expRadius / (expRadius * 0.2), duration: 0.25),
+                    SKAction.fadeOut(withDuration: 0.25)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+
+            // Layer 4: Debris particles
+            let debrisColors: [SKColor] = [
+                SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1),
+                SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 1),
+                SKColor(red: 1.0, green: 0.2, blue: 0.0, alpha: 1),
+                SKColor(red: 1.0, green: 0.95, blue: 0.6, alpha: 1)
+            ]
+            for _ in 0..<12 {
+                let angle = CGFloat.random(in: 0...(2 * .pi))
+                let speed = CGFloat.random(in: 80...180)
+                let particleSize = CGFloat.random(in: 2...5)
+                let debris = SKSpriteNode(color: debrisColors.randomElement()!, size: CGSize(width: particleSize, height: particleSize))
+                debris.position = hitPos
+                debris.zPosition = 89
+                debris.blendMode = .add
+                addChild(debris)
+                debris.run(SKAction.sequence([
+                    SKAction.group([
+                        SKAction.move(by: CGVector(dx: cos(angle) * speed * 0.3, dy: sin(angle) * speed * 0.3), duration: 0.3),
+                        SKAction.fadeOut(withDuration: 0.3),
+                        SKAction.scale(to: 0.2, duration: 0.3)
+                    ]),
+                    SKAction.removeFromParent()
+                ]))
+            }
         }
 
         projectile.onHit()

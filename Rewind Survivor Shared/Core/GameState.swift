@@ -147,8 +147,8 @@ class GameState {
 
     @discardableResult
     func checkDeathThreshold() -> Bool {
-        guard nextDeathThresholdIndex < GameConfig.deathThresholds.count else { return false }
-        if score >= GameConfig.deathThresholds[nextDeathThresholdIndex] {
+        let threshold = GameConfig.deathThreshold(forIndex: nextDeathThresholdIndex)
+        if score >= threshold {
             deathsRemaining += 1
             nextDeathThresholdIndex += 1
             return true
@@ -156,14 +156,13 @@ class GameState {
         return false
     }
 
-    var nextDeathThreshold: Int? {
-        guard nextDeathThresholdIndex < GameConfig.deathThresholds.count else { return nil }
-        return GameConfig.deathThresholds[nextDeathThresholdIndex]
+    var nextDeathThreshold: Int {
+        return GameConfig.deathThreshold(forIndex: nextDeathThresholdIndex)
     }
 
     var deathThresholdProgress: CGFloat {
-        guard let threshold = nextDeathThreshold else { return 1.0 }
-        let previousThreshold = nextDeathThresholdIndex > 0 ? GameConfig.deathThresholds[nextDeathThresholdIndex - 1] : 0
+        let threshold = nextDeathThreshold
+        let previousThreshold = nextDeathThresholdIndex > 0 ? GameConfig.deathThreshold(forIndex: nextDeathThresholdIndex - 1) : 0
         let range = threshold - previousThreshold
         guard range > 0 else { return 1.0 }
         return CGFloat(score - previousThreshold) / CGFloat(range)

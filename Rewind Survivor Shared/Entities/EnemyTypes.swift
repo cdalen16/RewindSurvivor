@@ -9,6 +9,7 @@ enum EnemyBehavior {
     case juggernaut
     case wraith
     case splitter
+    case shieldBearer
 }
 
 struct EnemyType {
@@ -87,7 +88,7 @@ struct EnemyType {
         name: "Juggernaut",
         behavior: .juggernaut,
         baseHP: 200,
-        baseSpeed: 40,
+        baseSpeed: 55,
         baseDamage: 25,
         basePoints: 80,
         spriteSize: 48,
@@ -104,7 +105,7 @@ struct EnemyType {
         basePoints: 60,
         spriteSize: 32,
         color: ColorPalette.enemyWraith,
-        minWave: 18
+        minWave: 25
     )
 
     static let splitter = EnemyType(
@@ -116,10 +117,22 @@ struct EnemyType {
         basePoints: 40,
         spriteSize: 32,
         color: ColorPalette.enemySplitter,
-        minWave: 21
+        minWave: 20
     )
 
-    static let allTypes: [EnemyType] = [shambler, dasher, strafer, bomber, necromancer, juggernaut, wraith, splitter]
+    static let shieldBearer = EnemyType(
+        name: "ShieldBearer",
+        behavior: .shieldBearer,
+        baseHP: 120,
+        baseSpeed: 50,
+        baseDamage: 20,
+        basePoints: 100,
+        spriteSize: 36,
+        color: ColorPalette.enemyShieldBearer,
+        minWave: 30
+    )
+
+    static let allTypes: [EnemyType] = [shambler, dasher, strafer, bomber, necromancer, juggernaut, wraith, splitter, shieldBearer]
 
     static func typesAvailable(forWave wave: Int) -> [EnemyType] {
         return allTypes.filter { $0.minWave <= wave }

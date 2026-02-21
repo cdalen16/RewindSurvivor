@@ -222,7 +222,8 @@ class HUDNode: SKNode {
             healthBarFill.color = ColorPalette.hudHealthLow
         }
 
-        healthLabel.text = "\(Int(playerHP))/\(Int(playerMaxHP))"
+        let displayHP = playerHP > 0 ? max(1, Int(ceil(playerHP))) : 0
+        healthLabel.text = "\(displayHP)/\(Int(playerMaxHP))"
 
         // Score
         scoreLabel.text = "\(gameState.score)"

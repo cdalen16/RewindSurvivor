@@ -34,6 +34,12 @@ class EnemyNode: SKSpriteNode {
     // Splitter state
     var canSplit: Bool = true
 
+    // Shield Bearer state
+    private(set) var shieldFacingDirection: CGVector = CGVector(dx: 0, dy: -1)
+    private var shieldAngle: CGFloat = -.pi / 2
+    private let shieldTurnSpeed: CGFloat = 1.8  // radians/sec — player can outrun this
+    private var shieldVisualNode: SKNode?
+
     private enum GroundPoundState {
         case walking
         case telegraphing
@@ -77,6 +83,55 @@ class EnemyNode: SKSpriteNode {
         body.friction = 0
         self.physicsBody = body
         self.baseSpeed = self.moveSpeed
+
+        // Create dynamic shield visual for Shield Bearer
+        if type.behavior == .shieldBearer {
+            setupShieldVisual()
+        }
+    }
+
+    private func setupShieldVisual() {
+        let container = SKNode()
+        container.zPosition = 2
+
+        let shieldColor = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1)
+        let shieldGlow = SKColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 0.4)
+
+        // Shield barrier (arc shape) — positioned at offset from center
+        let barrierWidth: CGFloat = 6
+        let barrierHeight: CGFloat = 28
+
+        // Main shield bar
+        let shield = SKSpriteNode(color: shieldColor, size: CGSize(width: barrierWidth, height: barrierHeight))
+        shield.position = CGPoint(x: 22, y: 0)
+        shield.alpha = 0.85
+        shield.blendMode = .add
+        shield.name = "shieldBar"
+        container.addChild(shield)
+
+        // Glow behind shield
+        let glow = SKSpriteNode(color: shieldGlow, size: CGSize(width: barrierWidth + 8, height: barrierHeight + 8))
+        glow.position = CGPoint(x: 22, y: 0)
+        glow.alpha = 0.4
+        glow.blendMode = .add
+        container.addChild(glow)
+
+        // Edge highlights (top and bottom caps)
+        let capSize = CGSize(width: barrierWidth + 2, height: 3)
+        let topCap = SKSpriteNode(color: .white, size: capSize)
+        topCap.position = CGPoint(x: 22, y: barrierHeight / 2)
+        topCap.alpha = 0.7
+        topCap.blendMode = .add
+        container.addChild(topCap)
+
+        let botCap = SKSpriteNode(color: .white, size: capSize)
+        botCap.position = CGPoint(x: 22, y: -barrierHeight / 2)
+        botCap.alpha = 0.7
+        botCap.blendMode = .add
+        container.addChild(botCap)
+
+        addChild(container)
+        shieldVisualNode = container
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -101,8 +156,8 @@ class EnemyNode: SKSpriteNode {
             self.texture = SpriteFactory.shared.enemyTexture(type: enemyType, frame: currentFrame)
         }
 
-        // Face movement direction (flip sprite horizontally)
-        if let vel = physicsBody?.velocity, abs(vel.dx) > 10 {
+        // Face movement direction (flip sprite horizontally) — skip for shield bearer (uses shield rotation)
+        if behavior != .shieldBearer, let vel = physicsBody?.velocity, abs(vel.dx) > 10 {
             xScale = vel.dx < 0 ? -abs(xScale) : abs(xScale)
         }
 
@@ -237,7 +292,7 @@ class EnemyNode: SKSpriteNode {
             case .walking:
                 let dir = avoidObstacles(desiredDirection: toTarget.normalized())
                 physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
-                if dist < 70 {
+                if dist < 120 {
                     groundPoundState = .telegraphing
                     groundPoundTimer = 0
                     physicsBody?.velocity = .zero
@@ -257,9 +312,16 @@ class EnemyNode: SKSpriteNode {
                     groundPoundTimer = 0
                     removeAction(forKey: "groundPoundTelegraph")
                     removeAction(forKey: "groundPoundGrow")
-                    // Slam down
-                    run(SKAction.scale(to: 1.0, duration: 0.08))
-                    groundPound()
+                    // Lunge toward player before slamming
+                    let lungeDir = toTarget.normalized()
+                    let lungeDist = min(dist, 60.0)
+                    let lungeMove = SKAction.move(by: CGVector(dx: lungeDir.dx * lungeDist, dy: lungeDir.dy * lungeDist), duration: 0.08)
+                    run(SKAction.group([
+                        lungeMove,
+                        SKAction.scale(to: 1.0, duration: 0.08)
+                    ])) { [weak self] in
+                        self?.groundPound()
+                    }
                 }
 
             case .slamming:
@@ -271,7 +333,7 @@ class EnemyNode: SKSpriteNode {
 
             case .recovering:
                 physicsBody?.velocity = .zero
-                if groundPoundTimer >= 1.2 {
+                if groundPoundTimer >= 0.7 {
                     groundPoundState = .walking
                     groundPoundTimer = 0
                 }
@@ -318,6 +380,28 @@ class EnemyNode: SKSpriteNode {
                     physicsBody?.velocity = .zero
                 }
             }
+
+        case .shieldBearer:
+            // Chase target
+            let dir = avoidObstacles(desiredDirection: toTarget.normalized())
+            physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
+
+            // Shield turns toward target with limited turn speed (player can outmaneuver)
+            let targetAngle = atan2(toTarget.dy, toTarget.dx)
+            var angleDiff = targetAngle - shieldAngle
+            // Normalize to [-pi, pi]
+            while angleDiff > .pi { angleDiff -= 2 * .pi }
+            while angleDiff < -.pi { angleDiff += 2 * .pi }
+            let maxTurn = shieldTurnSpeed * CGFloat(deltaTime)
+            if abs(angleDiff) <= maxTurn {
+                shieldAngle = targetAngle
+            } else {
+                shieldAngle += angleDiff > 0 ? maxTurn : -maxTurn
+            }
+            shieldFacingDirection = CGVector(dx: cos(shieldAngle), dy: sin(shieldAngle))
+
+            // Rotate shield visual to match (don't use xScale flip for shield bearer)
+            shieldVisualNode?.zRotation = shieldAngle
 
         case .splitter:
             let dir = avoidObstacles(desiredDirection: toTarget.normalized())
@@ -515,7 +599,7 @@ class EnemyNode: SKSpriteNode {
     private func groundPound() {
         guard let scene = self.scene else { return }
 
-        let radius: CGFloat = 100
+        let radius: CGFloat = 120
         // Damage player if in range
         scene.enumerateChildNodes(withName: "player") { node, _ in
             let dx = node.position.x - self.position.x
