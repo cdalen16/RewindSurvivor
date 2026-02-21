@@ -15,6 +15,10 @@ class GameViewController: UIViewController {
         skView.showsFPS = true
         skView.showsNodeCount = true
         skView.preferredFramesPerSecond = 60
+
+        // Bridge AdManager to GameScene
+        AdManager.shared.presentingViewController = self
+        scene.adBridge = AdManager.shared
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

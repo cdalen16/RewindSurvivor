@@ -2,6 +2,7 @@ import SpriteKit
 
 class GameOverNode: SKNode {
     private var onRestart: (() -> Void)?
+    private var onWatchAdToRevive: (() -> Void)?
 
     override init() {
         super.init()
@@ -13,8 +14,9 @@ class GameOverNode: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func show(screenSize: CGSize, gameState: GameState, onRestart: @escaping () -> Void) {
+    func show(screenSize: CGSize, gameState: GameState, canRevive: Bool = false, onRestart: @escaping () -> Void, onWatchAdToRevive: (() -> Void)? = nil) {
         self.onRestart = onRestart
+        self.onWatchAdToRevive = onWatchAdToRevive
         self.isHidden = false
         removeAllChildren()
 
@@ -98,6 +100,41 @@ class GameOverNode: SKNode {
             value.run(SKAction.sequence([SKAction.wait(forDuration: delay), SKAction.fadeIn(withDuration: 0.3)]))
         }
 
+        // Revive button (only if available)
+        if canRevive {
+            let reviveBtn = SKNode()
+            reviveBtn.position = CGPoint(x: 0, y: -screenSize.height * 0.17)
+            reviveBtn.zPosition = 1
+            reviveBtn.name = "reviveButton"
+
+            let bg = SKShapeNode(rectOf: CGSize(width: 220, height: 50), cornerRadius: 8)
+            bg.fillColor = ColorPalette.hudBackground
+            bg.strokeColor = ColorPalette.playerPrimary
+            bg.lineWidth = 2
+            reviveBtn.addChild(bg)
+
+            let label = SKLabelNode(fontNamed: "Menlo-Bold")
+            label.text = "▶ REVIVE"
+            label.fontSize = 20
+            label.fontColor = ColorPalette.playerPrimary
+            label.verticalAlignmentMode = .center
+            label.horizontalAlignmentMode = .center
+            reviveBtn.addChild(label)
+
+            addChild(reviveBtn)
+
+            reviveBtn.alpha = 0
+            reviveBtn.setScale(0.8)
+            reviveBtn.run(SKAction.sequence([
+                SKAction.wait(forDuration: 1.5),
+                SKAction.group([SKAction.fadeIn(withDuration: 0.3), SKAction.scale(to: 1.0, duration: 0.3)]),
+                SKAction.repeatForever(SKAction.sequence([
+                    SKAction.scale(to: 1.05, duration: 0.8),
+                    SKAction.scale(to: 1.0, duration: 0.8),
+                ]))
+            ]))
+        }
+
         // Tap to restart
         let restartLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         restartLabel.text = "TAP TO RESTART"
@@ -128,9 +165,24 @@ class GameOverNode: SKNode {
         ]))
     }
 
-    func handleTouch() {
-        // Only respond after delay
+    func handleTouch(at point: CGPoint? = nil) {
         guard !isHidden else { return }
+
+        // Check if revive button was tapped
+        if let point = point, let parent = self.parent,
+           let reviveBtn = childNode(withName: "reviveButton") {
+            let localPoint = convert(convert(point, from: parent), to: reviveBtn)
+            if abs(localPoint.x) < 110 && abs(localPoint.y) < 25 {
+                reviveBtn.run(SKAction.sequence([
+                    SKAction.scale(to: 0.9, duration: 0.05),
+                    SKAction.scale(to: 1.0, duration: 0.05),
+                ])) { [weak self] in
+                    self?.onWatchAdToRevive?()
+                }
+                return
+            }
+        }
+
         onRestart?()
     }
 

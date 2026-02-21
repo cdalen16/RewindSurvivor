@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BDBB7B512F4A39840098D32A /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = BDBB7B502F4A39840098D32A /* GoogleMobileAds */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		BDBB7A8F2F47EE120098D32A /* Rewind Survivor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rewind Survivor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -28,6 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BDBB7B512F4A39840098D32A /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +77,7 @@
 			);
 			name = "Rewind Survivor iOS";
 			packageProductDependencies = (
+				BDBB7B502F4A39840098D32A /* GoogleMobileAds */,
 			);
 			productName = "Rewind Survivor iOS";
 			productReference = BDBB7A8F2F47EE120098D32A /* Rewind Survivor.app */;
@@ -101,6 +107,9 @@
 			);
 			mainGroup = BDBB7A812F47EE120098D32A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BDBB7B4F2F4A39840098D32A /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BDBB7A902F47EE120098D32A /* Products */;
 			projectDirPath = "";
@@ -141,6 +150,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = HJMVN69PZV;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -175,6 +185,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = HJMVN69PZV;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Info.plist";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -339,6 +350,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BDBB7B4F2F4A39840098D32A /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BDBB7B502F4A39840098D32A /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BDBB7B4F2F4A39840098D32A /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BDBB7A822F47EE120098D32A /* Project object */;
 }

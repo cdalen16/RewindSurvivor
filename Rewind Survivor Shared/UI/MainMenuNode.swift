@@ -4,6 +4,7 @@ class MainMenuNode: SKNode {
     private var onPlay: (() -> Void)?
     private var onShop: (() -> Void)?
     private var onStats: (() -> Void)?
+    private var onWatchAd: (() -> Void)?
 
     override init() {
         super.init()
@@ -13,10 +14,11 @@ class MainMenuNode: SKNode {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func show(screenSize: CGSize, onPlay: @escaping () -> Void, onShop: @escaping () -> Void, onStats: @escaping () -> Void) {
+    func show(screenSize: CGSize, isAdReady: Bool = false, onPlay: @escaping () -> Void, onShop: @escaping () -> Void, onStats: @escaping () -> Void, onWatchAd: (() -> Void)? = nil) {
         self.onPlay = onPlay
         self.onShop = onShop
         self.onStats = onStats
+        self.onWatchAd = onWatchAd
         self.isHidden = false
         self.alpha = 1
         removeAllChildren()
@@ -127,13 +129,19 @@ class MainMenuNode: SKNode {
                                      size: CGSize(width: 200, height: 48), name: "statsButton")
         addChild(statsBtn)
 
+        // FREE COINS button
+        let adBtn = createButton(text: "▶ FREE COINS", color: ColorPalette.gold,
+                                  position: CGPoint(x: 0, y: -screenSize.height * 0.36),
+                                  size: CGSize(width: 200, height: 48), name: "adButton")
+        addChild(adBtn)
+
         // Animate in
         title.alpha = 0; title.setScale(0.8)
         title.run(SKAction.group([SKAction.fadeIn(withDuration: 0.5), SKAction.scale(to: 1.0, duration: 0.5)]))
         subtitle.alpha = 0
         subtitle.run(SKAction.sequence([SKAction.wait(forDuration: 0.2), SKAction.fadeIn(withDuration: 0.4)]))
 
-        for (i, name) in ["playButton", "shopButton", "statsButton"].enumerated() {
+        for (i, name) in ["playButton", "shopButton", "statsButton", "adButton"].enumerated() {
             if let btn = childNode(withName: name) {
                 btn.alpha = 0; btn.setScale(0.8)
                 btn.run(SKAction.sequence([
@@ -171,7 +179,7 @@ class MainMenuNode: SKNode {
         guard let parent = self.parent else { return }
         let localPoint = convert(point, from: parent)
 
-        for (name, action) in [("playButton", onPlay), ("shopButton", onShop), ("statsButton", onStats)] {
+        for (name, action) in [("playButton", onPlay), ("shopButton", onShop), ("statsButton", onStats), ("adButton", onWatchAd)] {
             guard let btn = childNode(withName: name), let callback = action else { continue }
             let btnLocal = btn.convert(localPoint, from: self)
             // Check if within button bounds (approximate with distance)

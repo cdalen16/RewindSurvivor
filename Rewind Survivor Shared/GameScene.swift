@@ -32,6 +32,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var arenaNode: SKNode!
     private var freezeAuraContainer: SKNode?
 
+    // MARK: - Ads
+    weak var adBridge: AdBridge?
+    private var hasUsedAdRevive: Bool = false
+
     // MARK: - Timing
     private var lastUpdateTime: TimeInterval = 0
     private var rewindTimer: TimeInterval = 0
@@ -553,6 +557,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.isHidden = true
         SpriteFactory.shared.invalidatePlayerTextures()
         mainMenu.show(screenSize: size,
+            isAdReady: adBridge?.isCoinAdReady ?? false,
             onPlay: { [weak self] in
                 guard let self = self else { return }
                 self.transition {
@@ -587,11 +592,34 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         }
                     }
                 }
+            },
+            onWatchAd: { [weak self] in
+                guard let self = self else { return }
+                self.adBridge?.showCoinAd { success in
+                    if success {
+                        PersistenceManager.shared.addCoins(GameConfig.adRewardCoins)
+                        // Refresh menu to show updated coin count
+                        self.mainMenu.hide()
+                        self.showMainMenu()
+                    }
+                }
             }
         )
     }
 
+    private func revivePlayer() {
+        gameOverScreen.hide()
+        hasUsedAdRevive = true
+        gameState.gamePhase = .playing
+        gameState.isGameOver = false
+        player.isHidden = false
+        player.hp = player.maxHP * 0.5
+        player.applyInvincibility(duration: 2.0)
+        hud.show()
+    }
+
     private func startNewGame() {
+        hasUsedAdRevive = false
         gameState.reset()
         gameState.gamePhase = .playing
         inputManager.reset()
@@ -695,13 +723,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             )
 
             gameOverTapDelay = 2.0
-            gameOverScreen.show(screenSize: size, gameState: gameState) { [weak self] in
-                guard let self = self else { return }
-                self.transition {
-                    self.gameOverScreen.hide()
-                    self.showMainMenu()
+            let canRevive = !hasUsedAdRevive && (adBridge?.isReviveAdReady ?? false)
+            gameOverScreen.show(screenSize: size, gameState: gameState, canRevive: canRevive,
+                onRestart: { [weak self] in
+                    guard let self = self else { return }
+                    self.transition {
+                        self.gameOverScreen.hide()
+                        self.showMainMenu()
+                    }
+                },
+                onWatchAdToRevive: { [weak self] in
+                    guard let self = self else { return }
+                    self.adBridge?.showReviveAd { success in
+                        if success {
+                            self.revivePlayer()
+                        }
+                    }
                 }
-            }
+            )
         }
     }
 
@@ -1434,7 +1473,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
         case .gameOver:
             if gameOverTapDelay <= 0 {
-                gameOverScreen.handleTouch()
+                for touch in touches {
+                    let location = touch.location(in: cameraManager.cameraNode)
+                    gameOverScreen.handleTouch(at: location)
+                }
             }
 
         case .statsScreen:

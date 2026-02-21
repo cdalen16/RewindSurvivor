@@ -54,6 +54,9 @@ struct GameConfig {
     static let screenShakeMagnitude: CGFloat = 8.0
     static let damageNumberDuration: TimeInterval = 0.8
 
+    // MARK: - Ads
+    static let adRewardCoins: Int = 500
+
     // MARK: - Spawn
     static let spawnMargin: CGFloat = 100
     static let minSpawnDistanceFromPlayer: CGFloat = 300
