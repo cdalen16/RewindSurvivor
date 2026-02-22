@@ -229,6 +229,16 @@ class CombatSystem {
         return -totalSpread / 2 + step * CGFloat(index)
     }
 
+    // MARK: - Save/Resume
+
+    var currentAttackTimer: TimeInterval { playerAttackTimer }
+    var currentOrbitalAngle: CGFloat { orbitalAngle }
+
+    func restoreState(attackTimer: TimeInterval, orbitalAngle: CGFloat) {
+        self.playerAttackTimer = attackTimer
+        self.orbitalAngle = orbitalAngle
+    }
+
     func reset() {
         currentTarget = nil
         playerAttackTimer = 0

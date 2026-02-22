@@ -17,6 +17,8 @@ class EnemyNode: SKSpriteNode {
     var isFrozen: Bool = false
     private(set) var baseSpeed: CGFloat = 0
     private var isSlowed: Bool = false
+    private(set) var isChronoSlowed: Bool = false
+    private var chronoSlowMultiplier: CGFloat = 1.0
 
     // Stuck detection
     private var lastPosition: CGPoint = .zero
@@ -482,9 +484,35 @@ class EnemyNode: SKSpriteNode {
     func removeSlow() {
         if isSlowed {
             isSlowed = false
+            moveSpeed = baseSpeed * chronoSlowMultiplier
+            colorBlendFactor = isChronoSlowed ? 0.4 : 0
+        }
+    }
+
+    func applyChronoSlow() {
+        isChronoSlowed = true
+        chronoSlowMultiplier = 0.4
+        moveSpeed = baseSpeed * chronoSlowMultiplier
+        if !isSlowed {
+            colorBlendFactor = 0.4
+            color = ColorPalette.superChronoShift
+        }
+    }
+
+    func removeChronoSlow() {
+        isChronoSlowed = false
+        chronoSlowMultiplier = 1.0
+        if isSlowed {
+            moveSpeed = baseSpeed * (1.0 - 0.5) // restore freeze aura slow
+        } else {
             moveSpeed = baseSpeed
             colorBlendFactor = 0
         }
+    }
+
+    func restoreHP(_ restoredHP: CGFloat, maxHP restoredMaxHP: CGFloat) {
+        self.hp = restoredHP
+        self.maxHP = restoredMaxHP
     }
 
     private func findNearestTarget(_ targets: [SKNode]) -> SKNode? {

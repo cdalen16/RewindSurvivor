@@ -2,8 +2,10 @@ import SpriteKit
 
 class MainMenuNode: SKNode {
     private var onPlay: (() -> Void)?
+    private var onResume: (() -> Void)?
     private var onShop: (() -> Void)?
     private var onStats: (() -> Void)?
+    private var onTutorial: (() -> Void)?
 
     override init() {
         super.init()
@@ -13,10 +15,12 @@ class MainMenuNode: SKNode {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func show(screenSize: CGSize, onPlay: @escaping () -> Void, onShop: @escaping () -> Void, onStats: @escaping () -> Void) {
+    func show(screenSize: CGSize, hasSavedRun: Bool = false, onPlay: @escaping () -> Void, onResume: (() -> Void)? = nil, onShop: @escaping () -> Void, onStats: @escaping () -> Void, onTutorial: @escaping () -> Void) {
         self.onPlay = onPlay
+        self.onResume = onResume
         self.onShop = onShop
         self.onStats = onStats
+        self.onTutorial = onTutorial
         self.isHidden = false
         self.alpha = 1
         removeAllChildren()
@@ -109,23 +113,51 @@ class MainMenuNode: SKNode {
             ])))
         }
 
-        // PLAY button
-        let playBtn = createButton(text: "PLAY", color: ColorPalette.playerPrimary,
-                                    position: CGPoint(x: 0, y: -screenSize.height * 0.1),
+        // Button layout: stack from top, shift down if RESUME is shown
+        var buttonY = -screenSize.height * 0.1
+        var buttonNames: [String] = []
+
+        // RESUME button (only if saved run exists)
+        if hasSavedRun {
+            let resumeBtn = createButton(text: "RESUME", color: ColorPalette.rewindMagenta,
+                                          position: CGPoint(x: 0, y: buttonY),
+                                          size: CGSize(width: 200, height: 55), name: "resumeButton")
+            addChild(resumeBtn)
+            buttonNames.append("resumeButton")
+            buttonY -= screenSize.height * 0.09
+        }
+
+        // PLAY button (becomes NEW GAME if resume exists)
+        let playText = hasSavedRun ? "NEW GAME" : "PLAY"
+        let playBtn = createButton(text: playText, color: ColorPalette.playerPrimary,
+                                    position: CGPoint(x: 0, y: buttonY),
                                     size: CGSize(width: 200, height: 55), name: "playButton")
         addChild(playBtn)
+        buttonNames.append("playButton")
+        buttonY -= screenSize.height * 0.09
 
         // SHOP button
         let shopBtn = createButton(text: "SHOP", color: ColorPalette.gold,
-                                    position: CGPoint(x: 0, y: -screenSize.height * 0.19),
+                                    position: CGPoint(x: 0, y: buttonY),
                                     size: CGSize(width: 200, height: 48), name: "shopButton")
         addChild(shopBtn)
+        buttonNames.append("shopButton")
+        buttonY -= screenSize.height * 0.08
 
         // RECORDS button
         let statsBtn = createButton(text: "RECORDS", color: ColorPalette.textSecondary,
-                                     position: CGPoint(x: 0, y: -screenSize.height * 0.27),
+                                     position: CGPoint(x: 0, y: buttonY),
                                      size: CGSize(width: 200, height: 48), name: "statsButton")
         addChild(statsBtn)
+        buttonNames.append("statsButton")
+        buttonY -= screenSize.height * 0.08
+
+        // HOW TO PLAY button
+        let tutBtn = createButton(text: "HOW TO PLAY", color: ColorPalette.textSecondary.withAlphaComponent(0.7),
+                                   position: CGPoint(x: 0, y: buttonY),
+                                   size: CGSize(width: 200, height: 40), name: "tutorialButton")
+        addChild(tutBtn)
+        buttonNames.append("tutorialButton")
 
         // Animate in
         title.alpha = 0; title.setScale(0.8)
@@ -133,7 +165,7 @@ class MainMenuNode: SKNode {
         subtitle.alpha = 0
         subtitle.run(SKAction.sequence([SKAction.wait(forDuration: 0.2), SKAction.fadeIn(withDuration: 0.4)]))
 
-        for (i, name) in ["playButton", "shopButton", "statsButton"].enumerated() {
+        for (i, name) in buttonNames.enumerated() {
             if let btn = childNode(withName: name) {
                 btn.alpha = 0; btn.setScale(0.8)
                 btn.run(SKAction.sequence([
@@ -171,10 +203,16 @@ class MainMenuNode: SKNode {
         guard let parent = self.parent else { return }
         let localPoint = convert(point, from: parent)
 
-        for (name, action) in [("playButton", onPlay), ("shopButton", onShop), ("statsButton", onStats)] {
+        let buttons: [(String, (() -> Void)?)] = [
+            ("resumeButton", onResume),
+            ("playButton", onPlay),
+            ("shopButton", onShop),
+            ("statsButton", onStats),
+            ("tutorialButton", onTutorial),
+        ]
+        for (name, action) in buttons {
             guard let btn = childNode(withName: name), let callback = action else { continue }
             let btnLocal = btn.convert(localPoint, from: self)
-            // Check if within button bounds (approximate with distance)
             if abs(btnLocal.x) < 110 && abs(btnLocal.y) < 30 {
                 btn.run(SKAction.sequence([
                     SKAction.scale(to: 0.9, duration: 0.05),

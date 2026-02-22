@@ -16,6 +16,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private let powerUpManager = PowerUpManager()
     private let cameraManager = CameraManager()
     private let effectsManager = EffectsManager()
+    private let superPowerUpManager = SuperPowerUpManager()
 
     // MARK: - Entities
     private var player: PlayerNode!
@@ -30,6 +31,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var statsScreen: StatsScreenNode!
     private var shopScreen: ShopScreenNode!
     private var pauseOverlay: PauseOverlayNode!
+    private var tutorialScreen: TutorialNode!
+    private var superPowerUpSelection: SuperPowerUpSelectionNode!
     private var transitionOverlay: SKSpriteNode!
 
     // MARK: - Arena
@@ -118,6 +121,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Pause overlay
         pauseOverlay = PauseOverlayNode()
         cameraManager.cameraNode.addChild(pauseOverlay)
+
+        // Tutorial screen
+        tutorialScreen = TutorialNode()
+        cameraManager.cameraNode.addChild(tutorialScreen)
+
+        // Super power-up selection
+        superPowerUpSelection = SuperPowerUpSelectionNode()
+        cameraManager.cameraNode.addChild(superPowerUpSelection)
 
         // Transition overlay (dip-to-black between screens)
         transitionOverlay = SKSpriteNode(color: .black, size: size)
@@ -509,6 +520,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     @objc private func appWillResignActive() {
+        if gameState.gamePhase == .playing {
+            saveCurrentRun()
+        }
         pauseGame()
     }
 
@@ -522,6 +536,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             },
             onQuit: { [weak self] in
                 guard let self = self else { return }
+                PersistenceManager.shared.clearSavedRun()
                 self.isPaused = false
                 self.lastUpdateTime = 0
                 self.pauseOverlay.hide()
@@ -545,6 +560,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         waveManager.removeAll()
         ghostPlayback.removeAll()
         combatSystem.reset()
+        superPowerUpManager.reset()
         freezeAuraContainer?.removeFromParent()
         freezeAuraContainer = nil
         enumerateChildNodes(withName: "//pickup") { node, _ in node.removeFromParent() }
@@ -557,14 +573,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         hud.hide()
         player.isHidden = true
         SpriteFactory.shared.invalidatePlayerTextures()
+        let hasSaved = PersistenceManager.shared.hasSavedRun
         mainMenu.show(screenSize: size,
+            hasSavedRun: hasSaved,
             onPlay: { [weak self] in
                 guard let self = self else { return }
+                PersistenceManager.shared.clearSavedRun()
                 self.transition {
                     self.mainMenu.hide()
                     self.startNewGame()
                 }
             },
+            onResume: hasSaved ? { [weak self] in
+                guard let self = self else { return }
+                self.transition {
+                    self.mainMenu.hide()
+                    self.resumeFromSavedRun()
+                }
+            } : nil,
             onShop: { [weak self] in
                 guard let self = self else { return }
                 self.transition {
@@ -592,6 +618,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         }
                     }
                 }
+            },
+            onTutorial: { [weak self] in
+                guard let self = self else { return }
+                self.transition {
+                    self.mainMenu.hide()
+                    self.gameState.gamePhase = .tutorial
+                    self.tutorialScreen.show(screenSize: self.size) { [weak self] in
+                        guard let self = self else { return }
+                        self.transition {
+                            self.tutorialScreen.hide()
+                            self.showMainMenu()
+                        }
+                    }
+                }
             }
         )
     }
@@ -609,6 +649,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.isHidden = false
         player.resetForNewGame(gameState: gameState)
         combatSystem.reset()
+        superPowerUpManager.reset()
         ghostRecorder.reset()
         ghostPlayback.removeAll()
         waveManager.removeAll()
@@ -637,7 +678,48 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func onWaveComplete() {
         gameState.currentWave += 1
-        beginPowerUpSelect()
+        // Check for super power-up selection before normal power-ups
+        if superPowerUpManager.shouldShowSuperSelection(
+            wave: gameState.currentWave,
+            deathsAvailable: gameState.deathsRemaining,
+            acquired: gameState.acquiredSuperPowerUps
+        ) && superPowerUpManager.canAffordAny(
+            deathsAvailable: gameState.deathsRemaining,
+            acquired: gameState.acquiredSuperPowerUps
+        ) {
+            beginSuperPowerUpSelect()
+        } else {
+            beginPowerUpSelect()
+        }
+    }
+
+    private func beginSuperPowerUpSelect() {
+        gameState.gamePhase = .superPowerUpSelect
+        inputManager.reset()
+        let choices = superPowerUpManager.generateChoices(
+            deathsAvailable: gameState.deathsRemaining,
+            acquired: gameState.acquiredSuperPowerUps
+        )
+        superPowerUpSelection.show(
+            choices: choices,
+            deathsAvailable: gameState.deathsRemaining,
+            screenSize: size,
+            onSelect: { [weak self] selected in
+                guard let self = self else { return }
+                self.superPowerUpManager.apply(
+                    selected, gameState: self.gameState, scene: self,
+                    player: self.player, enemies: self.waveManager.activeEnemies,
+                    combatSystem: self.combatSystem
+                )
+                // Visual feedback
+                ParticleFactory.powerUpPickup(at: self.player.position, color: selected.iconColor, scene: self)
+                // Proceed to normal power-up selection
+                self.beginPowerUpSelect()
+            },
+            onSkip: { [weak self] in
+                self?.beginPowerUpSelect()
+            }
+        )
     }
 
     private func beginPowerUpSelect() {
@@ -681,6 +763,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.isHidden = true
         } else {
             // Game over
+            PersistenceManager.shared.clearSavedRun()
             gameState.gamePhase = .gameOver
             gameState.isGameOver = true
             inputManager.reset()
@@ -738,6 +821,234 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         effectsManager.flashWhite(duration: 0.2)
 
         gameState.gamePhase = .playing
+    }
+
+    // MARK: - Save / Resume
+
+    private func saveCurrentRun() {
+        guard gameState.gamePhase == .playing else { return }
+
+        // Serialize enemies
+        let savedEnemies: [SavedEnemy] = waveManager.activeEnemies.compactMap { enemy in
+            guard enemy.parent != nil && enemy.hp > 0 else { return nil }
+            return SavedEnemy(
+                typeName: enemy.enemyType.name,
+                position: CodablePoint(x: Double(enemy.position.x), y: Double(enemy.position.y)),
+                hp: Double(enemy.hp),
+                maxHP: Double(enemy.maxHP),
+                splitGeneration: enemy.splitGeneration,
+                scale: Double(abs(enemy.xScale))
+            )
+        }
+
+        // Serialize ghosts
+        let savedGhosts: [SavedGhostRecording] = ghostPlayback.activeGhosts.enumerated().map { (index, ghost) in
+            let snaps = ghost.recording.snapshots.map { s in
+                SavedSnapshot(
+                    position: CodablePoint(x: Double(s.position.x), y: Double(s.position.y)),
+                    facingDirection: CodableVector(dx: Double(s.facingDirection.dx), dy: Double(s.facingDirection.dy)),
+                    isFiring: s.isFiring,
+                    timestamp: s.timestamp
+                )
+            }
+            return SavedGhostRecording(snapshots: snaps, ghostLevel: ghost.ghostLevel, orbitIndex: index)
+        }
+
+        // Serialize spawn queue
+        let savedQueue: [SavedSpawnEntry] = waveManager.currentSpawnQueue.map { entry in
+            SavedSpawnEntry(typeName: entry.0.name, count: entry.1)
+        }
+
+        // Serialize acquired power-ups
+        let acquiredPUs: [String: Int] = Dictionary(uniqueKeysWithValues:
+            gameState.acquiredPowerUps.map { ($0.key.rawValue, $0.value) }
+        )
+        let acquiredSupers: [String] = gameState.acquiredSuperPowerUps.map { $0.rawValue }
+
+        let state = SavedRunState(
+            score: gameState.score,
+            currentWave: gameState.currentWave,
+            deathsRemaining: gameState.deathsRemaining,
+            nextDeathThresholdIndex: gameState.nextDeathThresholdIndex,
+            gameTime: gameState.gameTime,
+            playerSpeedMultiplier: Double(gameState.playerSpeedMultiplier),
+            playerDamageMultiplier: Double(gameState.playerDamageMultiplier),
+            playerAttackSpeedMultiplier: Double(gameState.playerAttackSpeedMultiplier),
+            playerProjectileCountBonus: gameState.playerProjectileCountBonus,
+            playerHPBonus: Double(gameState.playerHPBonus),
+            playerProjectilePiercing: gameState.playerProjectilePiercing,
+            playerGhostDamageMultiplier: Double(gameState.playerGhostDamageMultiplier),
+            pickupMagnetRange: Double(gameState.pickupMagnetRange),
+            orbitalCount: gameState.orbitalCount,
+            chainLightningBounces: gameState.chainLightningBounces,
+            lifeStealPercent: Double(gameState.lifeStealPercent),
+            explosionRadius: Double(gameState.explosionRadius),
+            thornsDamage: Double(gameState.thornsDamage),
+            freezeAuraRadius: Double(gameState.freezeAuraRadius),
+            freezeAuraSlowPercent: Double(gameState.freezeAuraSlowPercent),
+            critChance: Double(gameState.critChance),
+            acquiredPowerUps: acquiredPUs,
+            acquiredSuperPowerUps: acquiredSupers,
+            coinsEarnedThisRun: gameState.coinsEarnedThisRun,
+            killsThisRun: gameState.killsThisRun,
+            playerPosition: CodablePoint(x: Double(player.position.x), y: Double(player.position.y)),
+            playerHP: Double(player.hp),
+            playerMaxHP: Double(player.maxHP),
+            enemies: savedEnemies,
+            ghosts: savedGhosts,
+            spawnQueue: savedQueue,
+            totalToSpawn: waveManager.currentTotalToSpawn,
+            totalSpawned: waveManager.currentTotalSpawned,
+            spawnTimer: waveManager.currentSpawnTimer,
+            spawnInterval: waveManager.currentSpawnInterval,
+            attackTimer: combatSystem.currentAttackTimer,
+            orbitalAngle: Double(combatSystem.currentOrbitalAngle)
+        )
+
+        PersistenceManager.shared.saveRun(state)
+    }
+
+    private func resumeFromSavedRun() {
+        guard let state = PersistenceManager.shared.loadSavedRun() else {
+            showMainMenu()
+            return
+        }
+        PersistenceManager.shared.clearSavedRun()
+
+        // Reset everything first
+        gameState.reset()
+        cleanupGameplay()
+
+        // Restore GameState
+        gameState.score = state.score
+        gameState.currentWave = state.currentWave
+        gameState.deathsRemaining = state.deathsRemaining
+        gameState.nextDeathThresholdIndex = state.nextDeathThresholdIndex
+        gameState.gameTime = state.gameTime
+        gameState.playerSpeedMultiplier = CGFloat(state.playerSpeedMultiplier)
+        gameState.playerDamageMultiplier = CGFloat(state.playerDamageMultiplier)
+        gameState.playerAttackSpeedMultiplier = CGFloat(state.playerAttackSpeedMultiplier)
+        gameState.playerProjectileCountBonus = state.playerProjectileCountBonus
+        gameState.playerHPBonus = CGFloat(state.playerHPBonus)
+        gameState.playerProjectilePiercing = state.playerProjectilePiercing
+        gameState.playerGhostDamageMultiplier = CGFloat(state.playerGhostDamageMultiplier)
+        gameState.pickupMagnetRange = CGFloat(state.pickupMagnetRange)
+        gameState.orbitalCount = state.orbitalCount
+        gameState.chainLightningBounces = state.chainLightningBounces
+        gameState.lifeStealPercent = CGFloat(state.lifeStealPercent)
+        gameState.explosionRadius = CGFloat(state.explosionRadius)
+        gameState.thornsDamage = CGFloat(state.thornsDamage)
+        gameState.freezeAuraRadius = CGFloat(state.freezeAuraRadius)
+        gameState.freezeAuraSlowPercent = CGFloat(state.freezeAuraSlowPercent)
+        gameState.critChance = CGFloat(state.critChance)
+        gameState.coinsEarnedThisRun = state.coinsEarnedThisRun
+        gameState.killsThisRun = state.killsThisRun
+
+        // Restore acquired power-ups
+        for (rawValue, count) in state.acquiredPowerUps {
+            if let type = PowerUpType(rawValue: rawValue) {
+                gameState.acquiredPowerUps[type] = count
+            }
+        }
+        for rawValue in state.acquiredSuperPowerUps {
+            if let type = SuperPowerUpType(rawValue: rawValue) {
+                gameState.acquiredSuperPowerUps.insert(type)
+            }
+        }
+
+        // Set phase to playing
+        gameState.gamePhase = .playing
+        inputManager.reset()
+        joystickNode.isHidden = false
+
+        // Restore player
+        player.isHidden = false
+        player.maxHP = CGFloat(state.playerMaxHP)
+        player.hp = CGFloat(state.playerHP)
+        player.position = CGPoint(x: state.playerPosition.x, y: state.playerPosition.y)
+        player.isInvincible = false
+
+        // Restore freeze aura visual
+        freezeAuraContainer?.removeFromParent()
+        freezeAuraContainer = nil
+
+        // Restore enemies
+        let ghostCount = state.ghosts.count
+        for savedEnemy in state.enemies {
+            guard let enemyType = EnemyType.typeByName(savedEnemy.typeName) else { continue }
+            let enemy = EnemyNode(type: enemyType, wave: state.currentWave, ghostCount: ghostCount)
+            enemy.position = CGPoint(x: savedEnemy.position.x, y: savedEnemy.position.y)
+            enemy.restoreHP(CGFloat(savedEnemy.hp), maxHP: CGFloat(savedEnemy.maxHP))
+            enemy.splitGeneration = savedEnemy.splitGeneration
+
+            if savedEnemy.scale != 1.0 {
+                let scaleFactor = CGFloat(savedEnemy.scale)
+                enemy.setScale(scaleFactor)
+                // Recreate physics body for scaled enemies
+                let scaledRadius = CGFloat(enemyType.spriteSize) * 0.4 * scaleFactor
+                let body = SKPhysicsBody(circleOfRadius: scaledRadius)
+                body.categoryBitMask = PhysicsCategory.enemy
+                body.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.player
+                body.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.enemy
+                body.allowsRotation = false
+                body.affectedByGravity = false
+                body.linearDamping = 0
+                body.friction = 0
+                enemy.physicsBody = body
+            }
+
+            addChild(enemy)
+            waveManager.registerEnemy(enemy)
+        }
+
+        // Restore wave manager spawn state
+        let restoredQueue: [(EnemyType, Int)] = state.spawnQueue.compactMap { entry in
+            guard let type = EnemyType.typeByName(entry.typeName) else { return nil }
+            return (type, entry.count)
+        }
+        waveManager.restoreState(
+            spawnQueue: restoredQueue,
+            totalToSpawn: state.totalToSpawn,
+            totalSpawned: state.totalSpawned,
+            spawnTimer: state.spawnTimer,
+            spawnInterval: state.spawnInterval
+        )
+
+        // Restore combat system
+        combatSystem.restoreState(
+            attackTimer: state.attackTimer,
+            orbitalAngle: CGFloat(state.orbitalAngle)
+        )
+
+        // Restore ghosts
+        ghostRecorder.reset()
+        for savedGhost in state.ghosts {
+            let snapshots = savedGhost.snapshots.map { s in
+                PlayerSnapshot(
+                    position: CGPoint(x: s.position.x, y: s.position.y),
+                    facingDirection: CGVector(dx: s.facingDirection.dx, dy: s.facingDirection.dy),
+                    isFiring: s.isFiring,
+                    timestamp: s.timestamp
+                )
+            }
+            let recording = GhostRecording(snapshots: snapshots)
+            ghostPlayback.spawnGhost(from: recording, scene: self)
+            // Upgrade to saved level
+            if let ghost = ghostPlayback.activeGhosts.last {
+                for _ in 1..<savedGhost.ghostLevel {
+                    ghost.upgrade()
+                }
+            }
+        }
+
+        // Respawn shadow clone if acquired
+        if gameState.acquiredSuperPowerUps.contains(.shadowClone) {
+            superPowerUpManager.respawnShadowClone(scene: self, player: player)
+        }
+
+        hud.show()
+        hud.showWaveBanner(wave: gameState.currentWave, enemyCount: waveManager.enemiesRemaining)
+        lastUpdateTime = 0
     }
 
     // MARK: - Minion Spawning (called by Necromancer)
@@ -804,7 +1115,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .gameOver:
             gameOverTapDelay -= dt
 
-        case .paused, .powerUpSelect, .mainMenu, .waveComplete, .statsScreen, .shopScreen:
+        case .paused, .powerUpSelect, .superPowerUpSelect, .mainMenu, .waveComplete, .statsScreen, .shopScreen, .tutorial:
             break
         }
     }
@@ -873,6 +1184,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameState: gameState,
             ghostCount: ghostPlayback.activeGhosts.count,
             playerPosition: player.position
+        )
+
+        // Super power-ups
+        superPowerUpManager.update(
+            deltaTime: dt, scene: self, enemies: waveManager.activeEnemies,
+            player: player, gameState: gameState, combatSystem: combatSystem
         )
 
         // Camera
@@ -1094,6 +1411,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Player picks up coin: player(1) + pickup(128)
         else if maskA == PhysicsCategory.player && maskB == PhysicsCategory.pickup {
             handlePickupCollected(pickup: bodyB.node as? PickupNode)
+        }
+        // Shadow clone hit by enemy bullet: ghost(16) + enemyBullet(8)
+        else if maskA == PhysicsCategory.enemyBullet && maskB == PhysicsCategory.ghost {
+            handleEnemyBulletHitClone(projectile: bodyA.node as? ProjectileNode, clone: bodyB.node as? ShadowCloneNode)
+        }
+        else if maskA == PhysicsCategory.ghost && maskB == PhysicsCategory.enemyBullet {
+            handleEnemyBulletHitClone(projectile: bodyB.node as? ProjectileNode, clone: bodyA.node as? ShadowCloneNode)
         }
         // Bullet hits wall/obstacle: bullet(4/8/32) + wall(64)
         // Always destroy on wall hit, even if piercing
@@ -1404,6 +1728,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
 
+    private func handleEnemyBulletHitClone(projectile: ProjectileNode?, clone: ShadowCloneNode?) {
+        guard let projectile = projectile, let clone = clone else { return }
+        guard clone.parent != nil else { return }
+        clone.takeDamage(projectile.damage)
+        projectile.removeFromParent()
+    }
+
     private func handleEnemyBulletHitPlayer(projectile: ProjectileNode?) {
         guard let projectile = projectile, gameState.gamePhase == .playing else { return }
         guard !player.isInvincible else {
@@ -1471,6 +1802,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 shopScreen.handleTouchBegan(at: location)
             }
 
+        case .tutorial:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                tutorialScreen.handleTouchBegan(at: location)
+            }
+
+        case .superPowerUpSelect:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                superPowerUpSelection.handleTouch(at: location)
+            }
+
         default:
             break
         }
@@ -1504,6 +1847,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let location = touch.location(in: cameraManager.cameraNode)
                 shopScreen.handleTouchEnded(at: location)
             }
+        case .tutorial:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                tutorialScreen.handleTouchEnded(at: location)
+            }
         default:
             break
         }
@@ -1519,6 +1867,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             for touch in touches {
                 let location = touch.location(in: cameraManager.cameraNode)
                 shopScreen.handleTouchEnded(at: location)
+            }
+        case .tutorial:
+            for touch in touches {
+                let location = touch.location(in: cameraManager.cameraNode)
+                tutorialScreen.handleTouchEnded(at: location)
             }
         default:
             break

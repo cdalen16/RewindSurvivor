@@ -2132,6 +2132,93 @@ class SpriteFactory {
         }
     }
 
+    // MARK: - Super Power-Up Icons
+
+    func superPowerUpIconTexture(type: SuperPowerUpType) -> SKTexture {
+        let key = "super_\(type.rawValue)"
+        return cachedTexture(key: key) {
+            return self.makeCanvas(size: 24) { px in
+                let ic = type.iconColor
+                let bg = ColorPalette.hudBackground
+                let w = SKColor.white
+
+                // Background rounded rect
+                for y in 1...22 {
+                    for x in 1...22 {
+                        if (x <= 1 || x >= 22) && (y <= 1 || y >= 22) { continue }
+                        px(x, y, bg)
+                    }
+                }
+                // Border (double for super)
+                for x in 2...21 { px(x, 0, ic); px(x, 23, ic) }
+                for y in 2...21 { px(0, y, ic); px(23, y, ic) }
+                px(1, 1, ic); px(22, 1, ic); px(1, 22, ic); px(22, 22, ic)
+                for x in 3...20 { px(x, 1, ic.withAlphaComponent(0.4)); px(x, 22, ic.withAlphaComponent(0.4)) }
+                for y in 3...20 { px(1, y, ic.withAlphaComponent(0.4)); px(22, y, ic.withAlphaComponent(0.4)) }
+
+                switch type {
+                case .chronoShift:
+                    // Clock face
+                    for x in 8...15 { px(x, 5, ic); px(x, 18, ic) }
+                    for y in 8...15 { px(5, y, ic); px(18, y, ic) }
+                    px(6, 6, ic); px(7, 5, ic); px(17, 5, ic); px(6, 17, ic)
+                    px(17, 6, ic); px(7, 18, ic); px(17, 18, ic); px(6, 7, ic)
+                    px(18, 7, ic); px(18, 17, ic)
+                    // Clock hands
+                    for y in 8...11 { px(11, y, w); px(12, y, w) }
+                    for x in 12...15 { px(x, 11, w); px(x, 12, w) }
+                    // Center dot
+                    px(11, 12, w); px(12, 12, w)
+
+                case .quantumNuke:
+                    // Explosion burst — radiating lines
+                    for y in 4...19 { px(11, y, w); px(12, y, w) }
+                    for x in 4...19 { px(x, 11, w); px(x, 12, w) }
+                    // Diagonals
+                    for d in 4...9 {
+                        px(6 + d, 6 + d, ic); px(17 - d, 6 + d, ic)
+                        px(6 + d, 17 - d, ic); px(17 - d, 17 - d, ic)
+                    }
+                    // Center core
+                    for y in 10...13 { for x in 10...13 { px(x, y, w) } }
+
+                case .shadowClone:
+                    // Two overlapping figures
+                    // Back figure (dimmer)
+                    let dim = ic.withAlphaComponent(0.5)
+                    for y in 6...9 { for x in 13...16 { px(x, y, dim) } }
+                    for y in 10...17 { for x in 12...17 { px(x, y, dim) } }
+                    // Front figure
+                    for y in 7...10 { for x in 7...10 { px(x, y, w) } }
+                    for y in 11...18 { for x in 6...11 { px(x, y, ic) } }
+
+                case .gravitySingularity:
+                    // Black hole with swirl
+                    // Core
+                    for y in 9...14 { for x in 9...14 { px(x, y, SKColor(red: 0.05, green: 0, blue: 0.1, alpha: 1)) } }
+                    // Ring
+                    for x in 7...16 { px(x, 7, ic); px(x, 16, ic) }
+                    for y in 7...16 { px(7, y, ic); px(16, y, ic) }
+                    px(8, 8, ic); px(15, 8, ic); px(8, 15, ic); px(15, 15, ic)
+                    // Spiral lines
+                    px(5, 10, w); px(6, 8, w); px(8, 6, w); px(10, 5, w)
+                    px(18, 13, w); px(17, 15, w); px(15, 17, w); px(13, 18, w)
+
+                case .voidBarrier:
+                    // Shield ring
+                    for x in 6...17 { px(x, 5, ic); px(x, 18, ic) }
+                    for y in 6...17 { px(5, y, ic); px(18, y, ic) }
+                    px(6, 6, ic); px(17, 6, ic); px(6, 17, ic); px(17, 17, ic)
+                    // Inner cross pattern for energy
+                    px(11, 9, w); px(12, 9, w); px(11, 14, w); px(12, 14, w)
+                    px(9, 11, w); px(9, 12, w); px(14, 11, w); px(14, 12, w)
+                    // Center glow
+                    px(11, 11, w); px(12, 11, w); px(11, 12, w); px(12, 12, w)
+                }
+            }
+        }
+    }
+
     // MARK: - Cache Helper
 
     private func cachedTexture(key: String, generator: () -> SKTexture) -> SKTexture {

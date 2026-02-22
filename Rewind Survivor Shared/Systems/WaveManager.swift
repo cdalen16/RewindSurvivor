@@ -151,6 +151,24 @@ class WaveManager {
         activeEnemies.append(enemy)
     }
 
+    // MARK: - Save/Resume Accessors
+
+    var currentSpawnQueue: [(EnemyType, Int)] { spawnQueue }
+    var currentTotalToSpawn: Int { totalToSpawn }
+    var currentTotalSpawned: Int { totalSpawned }
+    var currentSpawnTimer: TimeInterval { spawnTimer }
+    var currentSpawnInterval: TimeInterval { spawnInterval }
+
+    func restoreState(spawnQueue: [(EnemyType, Int)], totalToSpawn: Int, totalSpawned: Int,
+                      spawnTimer: TimeInterval, spawnInterval: TimeInterval) {
+        self.spawnQueue = spawnQueue
+        self.totalToSpawn = totalToSpawn
+        self.totalSpawned = totalSpawned
+        self.spawnTimer = spawnTimer
+        self.spawnInterval = spawnInterval
+        self.isWaveInProgress = true
+    }
+
     func spawnMinion(at position: CGPoint, scene: SKScene, wave: Int, ghostCount: Int) {
         let minion = EnemyNode(type: .shambler, wave: max(1, wave - 2), ghostCount: ghostCount)
         minion.position = position

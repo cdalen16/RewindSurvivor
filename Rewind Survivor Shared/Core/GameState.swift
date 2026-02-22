@@ -10,6 +10,8 @@ enum GamePhase {
     case statsScreen
     case shopScreen
     case paused
+    case tutorial
+    case superPowerUpSelect
 }
 
 enum PowerUpType: String, CaseIterable {
@@ -139,6 +141,7 @@ class GameState {
 
     // Power-up tracking
     var acquiredPowerUps: [PowerUpType: Int] = [:]
+    var acquiredSuperPowerUps: Set<SuperPowerUpType> = []
 
     // Run stats (for persistence)
     var coinsEarnedThisRun: Int = 0
@@ -192,6 +195,7 @@ class GameState {
         freezeAuraSlowPercent = 0
         critChance = 0
         acquiredPowerUps.removeAll()
+        acquiredSuperPowerUps.removeAll()
         coinsEarnedThisRun = 0
         killsThisRun = 0
     }

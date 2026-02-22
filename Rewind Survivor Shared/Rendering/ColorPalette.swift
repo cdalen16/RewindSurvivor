@@ -47,6 +47,13 @@ struct ColorPalette {
     static let textSecondary = SKColor(red: 0.533, green: 0.533, blue: 0.667, alpha: 1.0)
     static let gold = SKColor(red: 1.0, green: 0.843, blue: 0.0, alpha: 1.0)
 
+    // MARK: - Super Power-Ups
+    static let superChronoShift = SKColor(red: 0.6, green: 0.3, blue: 1.0, alpha: 1.0)     // Purple
+    static let superQuantumNuke = SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 1.0)      // White-hot
+    static let superShadowClone = SKColor(red: 0.5, green: 0.0, blue: 1.0, alpha: 1.0)      // Deep purple
+    static let superGravitySingularity = SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0) // Dark purple
+    static let superVoidBarrier = SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1.0)      // Bright cyan
+
     // MARK: - Rewind Effect
     static let rewindMagenta = SKColor(red: 1.0, green: 0.0, blue: 1.0, alpha: 1.0)
     static let rewindScanline = SKColor(red: 1.0, green: 0.0, blue: 1.0, alpha: 0.25)

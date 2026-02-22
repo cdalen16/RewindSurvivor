@@ -138,6 +138,10 @@ struct EnemyType {
         return allTypes.filter { $0.minWave <= wave }
     }
 
+    static func typeByName(_ name: String) -> EnemyType? {
+        return allTypes.first { $0.name == name }
+    }
+
     // MARK: - Scaling
 
     static func scaledStats(type: EnemyType, wave: Int, ghostCount: Int) -> (hp: CGFloat, speed: CGFloat, damage: CGFloat) {

@@ -18,6 +18,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
+        // The GameScene handles save via willResignActiveNotification
+        // This is a backup to ensure UserDefaults syncs to disk
+        UserDefaults.standard.synchronize()
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
