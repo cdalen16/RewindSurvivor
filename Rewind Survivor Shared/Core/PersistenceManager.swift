@@ -9,8 +9,8 @@ struct PlayerProfile: Codable {
     var totalPlayTime: TimeInterval = 0
     var coins: Int = 0
     var equippedSkin: String = "default"
-    var equippedHat: String = "none"
-    var equippedTrail: String = "none"
+    var equippedHat: String = "hat_none"
+    var equippedTrail: String = "trail_none"
     var unlockedCosmetics: [String] = []
 
     var killsPerGame: Double {
@@ -27,7 +27,10 @@ class PersistenceManager {
 
     private init() {
         if let data = UserDefaults.standard.data(forKey: profileKey),
-           let decoded = try? JSONDecoder().decode(PlayerProfile.self, from: data) {
+           var decoded = try? JSONDecoder().decode(PlayerProfile.self, from: data) {
+            // Migrate old "none" IDs from before the rename
+            if decoded.equippedHat == "none" { decoded.equippedHat = "hat_none" }
+            if decoded.equippedTrail == "none" { decoded.equippedTrail = "trail_none" }
             profile = decoded
         } else {
             profile = PlayerProfile()
@@ -64,11 +67,6 @@ class PersistenceManager {
         return true
     }
 
-    func addCoins(_ amount: Int) {
-        profile.coins += amount
-        save()
-    }
-
     func unlockCosmetic(_ id: String) {
         guard !profile.unlockedCosmetics.contains(id) else { return }
         profile.unlockedCosmetics.append(id)
@@ -76,7 +74,7 @@ class PersistenceManager {
     }
 
     func isUnlocked(_ id: String) -> Bool {
-        return profile.unlockedCosmetics.contains(id) || id == "default" || id == "none"
+        return profile.unlockedCosmetics.contains(id) || id == "default" || id == "hat_none" || id == "trail_none"
     }
 
     func equipSkin(_ id: String) {

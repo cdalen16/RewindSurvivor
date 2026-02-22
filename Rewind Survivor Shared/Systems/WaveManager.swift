@@ -155,6 +155,17 @@ class WaveManager {
         let minion = EnemyNode(type: .shambler, wave: max(1, wave - 2), ghostCount: ghostCount)
         minion.position = position
         minion.setScale(0.7) // Minions are smaller
+        // Recreate physics body to match scaled size (setScale doesn't affect physics)
+        let scaledRadius = CGFloat(EnemyType.shambler.spriteSize) * 0.4 * 0.7
+        let body = SKPhysicsBody(circleOfRadius: scaledRadius)
+        body.categoryBitMask = PhysicsCategory.enemy
+        body.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.player
+        body.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.enemy
+        body.allowsRotation = false
+        body.affectedByGravity = false
+        body.linearDamping = 0
+        body.friction = 0
+        minion.physicsBody = body
         scene.addChild(minion)
         activeEnemies.append(minion)
 

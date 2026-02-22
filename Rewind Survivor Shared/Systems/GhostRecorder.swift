@@ -77,21 +77,6 @@ class GhostRecorder {
         return GhostRecording(snapshots: snapshots)
     }
 
-    func updateMaxDuration(_ duration: TimeInterval) {
-        let newMax = Int(duration / interval)
-        if newMax > maxSnapshots {
-            // Extend buffer
-            let additional = newMax - maxSnapshots
-            buffer.append(contentsOf: Array(repeating: PlayerSnapshot(
-                position: .zero,
-                facingDirection: .zero,
-                isFiring: false,
-                timestamp: 0
-            ), count: additional))
-            maxSnapshots = newMax
-        }
-    }
-
     func reset() {
         writeIndex = 0
         count = 0

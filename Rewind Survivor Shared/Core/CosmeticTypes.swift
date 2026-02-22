@@ -32,7 +32,7 @@ struct CosmeticCatalog {
     ]
 
     static let hats: [CosmeticItem] = [
-        CosmeticItem(id: "none", category: .hat, displayName: "None", description: "No hat", price: 0, previewColor: .clear),
+        CosmeticItem(id: "hat_none", category: .hat, displayName: "None", description: "No hat", price: 0, previewColor: .clear),
         CosmeticItem(id: "hat_crown", category: .hat, displayName: "Royal Crown", description: "Rule the arena", price: 50000, previewColor: ColorPalette.gold),
         CosmeticItem(id: "hat_halo", category: .hat, displayName: "Angel Halo", description: "Divine protection", price: 25000, previewColor: SKColor(red: 1.0, green: 1.0, blue: 0.7, alpha: 1.0)),
         CosmeticItem(id: "hat_horns", category: .hat, displayName: "Demon Horns", description: "Embrace the darkness", price: 25000, previewColor: SKColor(red: 0.8, green: 0.0, blue: 0.0, alpha: 1.0)),
@@ -43,7 +43,7 @@ struct CosmeticCatalog {
     ]
 
     static let trails: [CosmeticItem] = [
-        CosmeticItem(id: "none", category: .trail, displayName: "None", description: "No trail", price: 0, previewColor: .clear),
+        CosmeticItem(id: "trail_none", category: .trail, displayName: "None", description: "No trail", price: 0, previewColor: .clear),
         CosmeticItem(id: "trail_fire", category: .trail, displayName: "Flame Trail", description: "Leave fire in your wake", price: 20000, previewColor: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0), trailColor: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0)),
         CosmeticItem(id: "trail_ice", category: .trail, displayName: "Frost Trail", description: "Chilling presence", price: 20000, previewColor: ColorPalette.freezeAuraBlue, trailColor: ColorPalette.freezeAuraBlue),
         CosmeticItem(id: "trail_shadow", category: .trail, displayName: "Shadow Trail", description: "Dark afterimages", price: 35000, previewColor: SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0), trailColor: SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0)),

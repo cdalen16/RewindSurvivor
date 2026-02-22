@@ -82,7 +82,7 @@ class PlayerNode: SKSpriteNode {
 
             // Trail particles
             let trailId = PersistenceManager.shared.profile.equippedTrail
-            if trailId != "none", let trailItem = CosmeticCatalog.item(byId: trailId), let trailColor = trailItem.trailColor {
+            if trailId != "trail_none", let trailItem = CosmeticCatalog.item(byId: trailId), let trailColor = trailItem.trailColor {
                 trailTimer += deltaTime
                 if trailTimer >= trailInterval {
                     trailTimer = 0

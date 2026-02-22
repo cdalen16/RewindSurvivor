@@ -3,20 +3,13 @@ import SpriteKit
 struct ColorPalette {
     // MARK: - Arena
     static let arenaFloor = SKColor(red: 0.051, green: 0.051, blue: 0.102, alpha: 1.0)     // #0D0D1A
-    static let arenaGrid = SKColor(red: 0.102, green: 0.102, blue: 0.180, alpha: 1.0)      // #1A1A2E
-    static let arenaBorder = SKColor(red: 0.086, green: 0.129, blue: 0.243, alpha: 1.0)    // #16213E
     static let arenaWall = SKColor(red: 0.173, green: 0.173, blue: 0.329, alpha: 1.0)      // #2C2C54
 
     // MARK: - Player
     static let playerPrimary = SKColor(red: 0.0, green: 0.961, blue: 1.0, alpha: 1.0)      // #00F5FF
     static let playerSecondary = SKColor(red: 0.0, green: 0.502, blue: 1.0, alpha: 1.0)    // #0080FF
-    static let playerOutline = SKColor.white
-    static let playerVisor = SKColor(red: 0.2, green: 1.0, blue: 0.8, alpha: 1.0)
-
     // MARK: - Ghost
     static let ghostCyan = SKColor(red: 0.502, green: 1.0, blue: 1.0, alpha: 1.0)          // #80FFFF
-    static let ghostCore = SKColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.2)
-
     // MARK: - Enemies
     static let enemyMelee = SKColor(red: 1.0, green: 0.267, blue: 0.267, alpha: 1.0)       // #FF4444
     static let enemyRanged = SKColor(red: 1.0, green: 0.533, blue: 0.0, alpha: 1.0)        // #FF8800
@@ -34,8 +27,6 @@ struct ColorPalette {
     static let bulletPlayer = SKColor(red: 0.0, green: 1.0, blue: 0.533, alpha: 1.0)       // #00FF88
     static let bulletEnemy = SKColor(red: 1.0, green: 0.133, blue: 0.0, alpha: 1.0)        // #FF2200
     static let bulletGhost = SKColor(red: 0.502, green: 1.0, blue: 1.0, alpha: 1.0)        // #80FFFF
-    static let bulletBoss = SKColor(red: 1.0, green: 0.0, blue: 1.0, alpha: 1.0)           // #FF00FF
-
     // MARK: - Power-ups
     static let powerUpGreen = SKColor(red: 0.0, green: 1.0, blue: 0.533, alpha: 1.0)
     static let powerUpBlue = SKColor(red: 0.0, green: 0.749, blue: 1.0, alpha: 1.0)

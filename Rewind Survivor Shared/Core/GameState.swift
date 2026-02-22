@@ -127,7 +127,6 @@ class GameState {
     var playerHPBonus: CGFloat = 0
     var playerProjectilePiercing: Int = 0
     var playerGhostDamageMultiplier: CGFloat = GameConfig.ghostDamageMultiplier
-    var rewindDuration: TimeInterval = GameConfig.rewindDuration
     var pickupMagnetRange: CGFloat = 50
     var orbitalCount: Int = 0
     var chainLightningBounces: Int = 0
@@ -183,7 +182,6 @@ class GameState {
         playerHPBonus = 0
         playerProjectilePiercing = 0
         playerGhostDamageMultiplier = GameConfig.ghostDamageMultiplier
-        rewindDuration = GameConfig.rewindDuration
         pickupMagnetRange = 50
         orbitalCount = 0
         chainLightningBounces = 0

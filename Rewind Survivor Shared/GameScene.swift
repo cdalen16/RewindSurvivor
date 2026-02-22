@@ -2,6 +2,10 @@ import SpriteKit
 
 class GameScene: SKScene, SKPhysicsContactDelegate {
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Systems
     private let gameState = GameState()
     private let inputManager = InputManager()
@@ -543,7 +547,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         combatSystem.reset()
         freezeAuraContainer?.removeFromParent()
         freezeAuraContainer = nil
-        enumerateChildNodes(withName: "//coinPickup") { node, _ in node.removeFromParent() }
+        enumerateChildNodes(withName: "//pickup") { node, _ in node.removeFromParent() }
     }
 
     private func showMainMenu() {
@@ -764,6 +768,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             child.splitGeneration = nextGen
             child.position = CGPoint(x: enemy.position.x + offset, y: enemy.position.y)
             child.setScale(scaleFactor)
+            // Recreate physics body to match scaled size
+            let scaledRadius = CGFloat(EnemyType.splitter.spriteSize) * 0.4 * scaleFactor
+            let body = SKPhysicsBody(circleOfRadius: scaledRadius)
+            body.categoryBitMask = PhysicsCategory.enemy
+            body.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.player
+            body.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.enemy
+            body.allowsRotation = false
+            body.affectedByGravity = false
+            body.linearDamping = 0
+            body.friction = 0
+            child.physicsBody = body
             child.alpha = 0
             addChild(child)
             waveManager.registerEnemy(child)
@@ -1228,7 +1243,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 let angle = CGFloat.random(in: 0...(2 * .pi))
                 let speed = CGFloat.random(in: 80...180)
                 let particleSize = CGFloat.random(in: 2...5)
-                let debris = SKSpriteNode(color: debrisColors.randomElement()!, size: CGSize(width: particleSize, height: particleSize))
+                let debris = SKSpriteNode(color: debrisColors[Int.random(in: 0..<debrisColors.count)], size: CGSize(width: particleSize, height: particleSize))
                 debris.position = hitPos
                 debris.zPosition = 89
                 debris.blendMode = .add
@@ -1330,7 +1345,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let dy = self.player.position.y - pickup.position.y
             let dist = sqrt(dx * dx + dy * dy)
 
-            if dist < magnetRange {
+            if dist < magnetRange && dist > 1 {
                 // Attract toward player
                 let speed: CGFloat = 300 + (magnetRange - dist) * 3
                 let dirX = dx / dist

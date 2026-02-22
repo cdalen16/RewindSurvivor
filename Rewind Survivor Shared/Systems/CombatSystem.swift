@@ -81,10 +81,13 @@ class CombatSystem {
         orbitalAngle += orbitalSpeed * CGFloat(deltaTime)
 
         // Decay hit cooldowns
-        for key in orbitalHitCooldowns.keys {
-            orbitalHitCooldowns[key]! -= deltaTime
-            if orbitalHitCooldowns[key]! <= 0 {
+        for key in Array(orbitalHitCooldowns.keys) {
+            guard let cooldown = orbitalHitCooldowns[key] else { continue }
+            let remaining = cooldown - deltaTime
+            if remaining <= 0 {
                 orbitalHitCooldowns.removeValue(forKey: key)
+            } else {
+                orbitalHitCooldowns[key] = remaining
             }
         }
 
@@ -191,8 +194,15 @@ class CombatSystem {
             dy: target.position.y - position.y
         ).normalized()
 
-        let damage = GameConfig.playerBaseDamage * gameState.playerDamageMultiplier * gameState.playerGhostDamageMultiplier * levelMultiplier
+        var damage = GameConfig.playerBaseDamage * gameState.playerDamageMultiplier * gameState.playerGhostDamageMultiplier * levelMultiplier
         let speed = GameConfig.playerBaseProjectileSpeed
+
+        // Critical strike roll (same as player)
+        var isCrit = false
+        if gameState.critChance > 0 && CGFloat.random(in: 0...1) < gameState.critChance {
+            damage *= 2.0
+            isCrit = true
+        }
 
         let baseCount = 1 + gameState.playerProjectileCountBonus
 
@@ -206,6 +216,7 @@ class CombatSystem {
                 piercing: gameState.playerProjectilePiercing,
                 type: .ghost
             )
+            projectile.isCrit = isCrit
             projectile.position = position
             scene.addChild(projectile)
         }

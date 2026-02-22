@@ -37,7 +37,7 @@ class GameOverNode: SKNode {
         addChild(gameOverLabel)
 
         // High score check
-        let isNewHighScore = gameState.score >= PersistenceManager.shared.profile.highScore && gameState.score > 0
+        let isNewHighScore = gameState.score > PersistenceManager.shared.profile.highScore && gameState.score > 0
         if isNewHighScore {
             let highScoreLabel = SKLabelNode(fontNamed: "Menlo-Bold")
             highScoreLabel.text = "NEW HIGH SCORE!"

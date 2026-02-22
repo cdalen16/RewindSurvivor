@@ -271,7 +271,8 @@ class EnemyNode: SKSpriteNode {
         case .spawner:
             let preferredDist: CGFloat = 300
             if dist < preferredDist {
-                let flee = CGVector(dx: -toTarget.normalized().dx, dy: -toTarget.normalized().dy)
+                let norm = toTarget.normalized()
+                let flee = CGVector(dx: -norm.dx, dy: -norm.dy)
                 let dir = avoidObstacles(desiredDirection: flee)
                 physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
             } else if dist > preferredDist + 100 {
@@ -627,12 +628,13 @@ class EnemyNode: SKSpriteNode {
 
         // 4) Sparks — fast-moving debris
         for _ in 0..<20 {
-            let sparkColor = [
+            let sparkColors: [SKColor] = [
                 SKColor(red: 1.0, green: 0.9, blue: 0.3, alpha: 1),
                 SKColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1),
                 SKColor(red: 1.0, green: 0.3, blue: 0.0, alpha: 1),
                 SKColor.white
-            ].randomElement()!
+            ]
+            let sparkColor = sparkColors[Int.random(in: 0..<sparkColors.count)]
             let sparkSize = CGFloat.random(in: 2...5)
             let spark = SKSpriteNode(color: sparkColor, size: CGSize(width: sparkSize, height: sparkSize))
             spark.position = position

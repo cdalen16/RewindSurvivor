@@ -14,17 +14,14 @@ struct GameConfig {
     static let playerBaseAttackRange: CGFloat = 300
 
     // MARK: - Ghost Replay
-    static let rewindDuration: TimeInterval = 10.0
     static let snapshotInterval: TimeInterval = 1.0 / 20.0
     static let maxSnapshots: Int = 200
     static let ghostAlpha: CGFloat = 0.55
-    static let ghostTintColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1.0)
     static let ghostDamageMultiplier: CGFloat = 0.7
 
     // MARK: - Scoring & Death Currency
     // Scaling formula: each threshold requires progressively more score
-    // threshold(n) = 500 * 1.65^n, rounded to nearest 500
-    // e.g. 500, 825→1000, 1361→1500, 2246→2500, 3706→3500, 6114→6000, ...
+    // threshold(n) = 500 * 1.90^n, rounded to nearest 500
     static let deathThresholdBase: Double = 500
     static let deathThresholdGrowth: Double = 1.90
 
@@ -35,11 +32,9 @@ struct GameConfig {
     }
 
     static let initialDeaths: Int = 0
-    static let basePointsPerKill: Int = 10
     static let pointsPerKillPerWave: Int = 2
 
     // MARK: - Waves
-    static let wavePrepTime: TimeInterval = 4.0
     static let baseEnemiesPerWave: Int = 8
     static let enemiesPerWaveGrowth: Double = 1.35
     static let maxEnemiesPerWave: Int = 80

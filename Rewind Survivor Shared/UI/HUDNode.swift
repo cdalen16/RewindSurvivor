@@ -245,7 +245,6 @@ class HUDNode: SKNode {
 
         // Death progress
         let progress = gameState.deathThresholdProgress
-        deathProgressFill.xScale = progress
         let fillWidth = 80 * progress
         deathProgressFill.size = CGSize(width: fillWidth, height: 6)
 

@@ -1657,7 +1657,7 @@ class SpriteFactory {
                     ColorPalette.playerPrimary.withAlphaComponent(0.12).cgColor,
                     SKColor.clear.cgColor
                 ] as CFArray
-                let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+                guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
                 let center = CGPoint(x: 0, y: 0)
                 c.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: CGFloat(size * s), options: [])
             }
@@ -1710,7 +1710,7 @@ class SpriteFactory {
                     SKColor(red: 0.0, green: 0.15, blue: 0.25, alpha: 0.12).cgColor,
                     SKColor.clear.cgColor
                 ] as CFArray
-                let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+                guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1]) else { return }
                 let center = CGPoint(x: CGFloat(size * s) / 2, y: CGFloat(size * s) / 2)
                 c.drawRadialGradient(gradient, startCenter: center, startRadius: 0, endCenter: center, endRadius: CGFloat(size * s) / 2, options: [])
             }

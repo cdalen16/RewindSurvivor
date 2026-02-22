@@ -76,12 +76,18 @@ class PowerUpManager {
             guard totalWeight > 0 else { break }
 
             var roll = Double.random(in: 0..<totalWeight)
+            var picked = false
             for (i, w) in weights.enumerated() {
                 roll -= w
                 if roll <= 0 {
                     choices.append(pool.remove(at: i))
+                    picked = true
                     break
                 }
+            }
+            // Fallback for floating-point edge case
+            if !picked, !pool.isEmpty {
+                choices.append(pool.removeLast())
             }
         }
 

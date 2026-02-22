@@ -74,7 +74,8 @@ class PowerUpSelectionNode: SKNode {
 
     func handleTouch(at point: CGPoint) {
         // point is in camera (parent) coordinate space
-        let localPoint = convert(point, from: self.parent!)
+        guard let parent = self.parent else { return }
+        let localPoint = convert(point, from: parent)
         for card in cards {
             if card.contains(localPoint) {
                 // Pulse and select
