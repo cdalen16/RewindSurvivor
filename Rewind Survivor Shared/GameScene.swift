@@ -549,6 +549,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private func showMainMenu() {
         gameState.gamePhase = .mainMenu
         inputManager.reset()
+        joystickNode.isHidden = true
         hud.hide()
         player.isHidden = true
         SpriteFactory.shared.invalidatePlayerTextures()
@@ -595,6 +596,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.reset()
         gameState.gamePhase = .playing
         inputManager.reset()
+        joystickNode.isHidden = false
 
         // Clean up freeze aura visual
         freezeAuraContainer?.removeFromParent()
@@ -749,14 +751,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     private func handleSplitterDeath(_ enemy: EnemyNode) {
         guard enemy.behavior == .splitter && enemy.canSplit else { return }
+        let nextGen = enemy.splitGeneration + 1
         let wave = gameState.currentWave
         let ghostCount = ghostPlayback.activeGhosts.count
+        // Each generation is smaller and weaker (spawned at lower effective wave)
+        let effectiveWave = max(1, wave - nextGen * 2)
+        let scaleFactor = pow(0.7, CGFloat(nextGen))
         for i in 0..<2 {
-            let offset = CGFloat(i == 0 ? -20 : 20)
-            let child = EnemyNode(type: .splitter, wave: max(1, wave - 3), ghostCount: ghostCount)
-            child.canSplit = false
+            let spread = 18.0 * scaleFactor
+            let offset = CGFloat(i == 0 ? -spread : spread)
+            let child = EnemyNode(type: .splitter, wave: effectiveWave, ghostCount: ghostCount)
+            child.splitGeneration = nextGen
             child.position = CGPoint(x: enemy.position.x + offset, y: enemy.position.y)
-            child.setScale(0.65)
+            child.setScale(scaleFactor)
             child.alpha = 0
             addChild(child)
             waveManager.registerEnemy(child)

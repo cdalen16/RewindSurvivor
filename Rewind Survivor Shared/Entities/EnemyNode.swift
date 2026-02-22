@@ -31,8 +31,9 @@ class EnemyNode: SKSpriteNode {
     private var wraithPhaseTimer: TimeInterval = 0
     private var isPhased: Bool = false
 
-    // Splitter state
-    var canSplit: Bool = true
+    // Splitter state — generation 0 = original, each split increments; max 3 splits deep
+    var splitGeneration: Int = 0
+    var canSplit: Bool { splitGeneration < 3 }
 
     // Shield Bearer state
     private(set) var shieldFacingDirection: CGVector = CGVector(dx: 0, dy: -1)
@@ -408,8 +409,27 @@ class EnemyNode: SKSpriteNode {
             physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
         }
 
-        // Safety clamp (failsafe only, physics boundary should handle this)
-        let hardLimit = GameConfig.arenaSize.width / 2 + 50
+        // Wall avoidance: push enemies inward when near arena edges
+        let arenaHalf = GameConfig.arenaSize.width / 2
+        let wallMargin: CGFloat = 40
+        let wallPushStrength: CGFloat = moveSpeed * 2.0
+        var wallPush = CGVector.zero
+        if position.x > arenaHalf - wallMargin {
+            wallPush.dx = -wallPushStrength * ((position.x - (arenaHalf - wallMargin)) / wallMargin)
+        } else if position.x < -(arenaHalf - wallMargin) {
+            wallPush.dx = wallPushStrength * ((-(arenaHalf - wallMargin) - position.x) / wallMargin)
+        }
+        if position.y > arenaHalf - wallMargin {
+            wallPush.dy = -wallPushStrength * ((position.y - (arenaHalf - wallMargin)) / wallMargin)
+        } else if position.y < -(arenaHalf - wallMargin) {
+            wallPush.dy = wallPushStrength * ((-(arenaHalf - wallMargin) - position.y) / wallMargin)
+        }
+        if let vel = physicsBody?.velocity, (wallPush.dx != 0 || wallPush.dy != 0) {
+            physicsBody?.velocity = CGVector(dx: vel.dx + wallPush.dx, dy: vel.dy + wallPush.dy)
+        }
+
+        // Hard clamp — keep enemies inside arena
+        let hardLimit = arenaHalf - 10
         if abs(position.x) > hardLimit || abs(position.y) > hardLimit {
             position.x = max(-hardLimit, min(hardLimit, position.x))
             position.y = max(-hardLimit, min(hardLimit, position.y))
@@ -532,7 +552,7 @@ class EnemyNode: SKSpriteNode {
         ).normalized()
 
         let projectile = ProjectileNode(
-            damage: contactDamage * 0.5,
+            damage: GameConfig.playerBaseHP * 0.08,
             velocity: CGVector(dx: dir.dx * 200, dy: dir.dy * 200),
             piercing: 0,
             type: .enemy
@@ -554,44 +574,115 @@ class EnemyNode: SKSpriteNode {
             }
         }
 
-        // Visual explosion
-        let particleCount = 24
-        for _ in 0..<particleCount {
-            let particle = SKSpriteNode(color: ColorPalette.bulletEnemy, size: CGSize(width: 5, height: 5))
-            particle.position = position
-            particle.zPosition = 95
-            particle.blendMode = .add
+        // Visual explosion — multi-layered
+
+        // 1) Bright white-hot core flash
+        let coreFlash = SKSpriteNode(color: .white, size: CGSize(width: 30, height: 30))
+        coreFlash.position = position
+        coreFlash.zPosition = 97
+        coreFlash.blendMode = .add
+        coreFlash.alpha = 1.0
+        scene.addChild(coreFlash)
+        coreFlash.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: 3.0, duration: 0.12),
+                SKAction.fadeOut(withDuration: 0.15)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // 2) Orange fireball expanding ring
+        let fireball = SKShapeNode(circleOfRadius: 10)
+        fireball.fillColor = SKColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 0.7)
+        fireball.strokeColor = SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 0.9)
+        fireball.lineWidth = 3
+        fireball.position = position
+        fireball.zPosition = 96
+        fireball.blendMode = .add
+        scene.addChild(fireball)
+        fireball.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: explosionRadius / 10, duration: 0.25),
+                SKAction.fadeOut(withDuration: 0.35)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // 3) Outer shockwave ring
+        let shockwave = SKShapeNode(circleOfRadius: 8)
+        shockwave.strokeColor = SKColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 0.6)
+        shockwave.fillColor = .clear
+        shockwave.lineWidth = 4
+        shockwave.position = position
+        shockwave.zPosition = 95
+        shockwave.blendMode = .add
+        scene.addChild(shockwave)
+        shockwave.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: (explosionRadius * 1.5) / 8, duration: 0.4),
+                SKAction.fadeOut(withDuration: 0.4)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+
+        // 4) Sparks — fast-moving debris
+        for _ in 0..<20 {
+            let sparkColor = [
+                SKColor(red: 1.0, green: 0.9, blue: 0.3, alpha: 1),
+                SKColor(red: 1.0, green: 0.5, blue: 0.1, alpha: 1),
+                SKColor(red: 1.0, green: 0.3, blue: 0.0, alpha: 1),
+                SKColor.white
+            ].randomElement()!
+            let sparkSize = CGFloat.random(in: 2...5)
+            let spark = SKSpriteNode(color: sparkColor, size: CGSize(width: sparkSize, height: sparkSize))
+            spark.position = position
+            spark.zPosition = 96
+            spark.blendMode = .add
 
             let angle = CGFloat.random(in: 0...(2 * .pi))
-            let speed = CGFloat.random(in: 80...200)
+            let speed = CGFloat.random(in: 100...280)
             let dx = cos(angle) * speed
             let dy = sin(angle) * speed
+            let duration = CGFloat.random(in: 0.3...0.6)
 
-            scene.addChild(particle)
-            particle.run(SKAction.sequence([
+            scene.addChild(spark)
+            spark.run(SKAction.sequence([
                 SKAction.group([
-                    SKAction.move(by: CGVector(dx: dx * 0.5, dy: dy * 0.5), duration: 0.5),
-                    SKAction.fadeOut(withDuration: 0.5),
-                    SKAction.scale(to: 0.2, duration: 0.5)
+                    SKAction.move(by: CGVector(dx: dx * Double(duration), dy: dy * Double(duration)), duration: Double(duration)),
+                    SKAction.fadeOut(withDuration: Double(duration)),
+                    SKAction.scale(to: 0.1, duration: Double(duration))
                 ]),
                 SKAction.removeFromParent()
             ]))
         }
 
-        // Flash
-        let flash = SKSpriteNode(color: .orange, size: CGSize(width: explosionRadius * 2, height: explosionRadius * 2))
-        flash.position = position
-        flash.zPosition = 94
-        flash.blendMode = .add
-        flash.alpha = 0.6
-        scene.addChild(flash)
-        flash.run(SKAction.sequence([
-            SKAction.group([
-                SKAction.fadeOut(withDuration: 0.3),
-                SKAction.scale(to: 1.5, duration: 0.3)
-            ]),
-            SKAction.removeFromParent()
-        ]))
+        // 5) Smoke puffs — slower, larger, darker
+        for _ in 0..<8 {
+            let smokeColor = SKColor(red: 0.3, green: 0.2, blue: 0.1, alpha: 1)
+            let smokeSize = CGFloat.random(in: 8...16)
+            let smoke = SKSpriteNode(color: smokeColor, size: CGSize(width: smokeSize, height: smokeSize))
+            smoke.position = CGPoint(
+                x: position.x + CGFloat.random(in: -15...15),
+                y: position.y + CGFloat.random(in: -15...15)
+            )
+            smoke.zPosition = 94
+            smoke.alpha = 0.5
+
+            let angle = CGFloat.random(in: 0...(2 * .pi))
+            let speed = CGFloat.random(in: 20...60)
+            let dx = cos(angle) * speed
+            let dy = sin(angle) * speed + 30 // drift upward
+
+            scene.addChild(smoke)
+            smoke.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.move(by: CGVector(dx: Double(dx) * 0.8, dy: Double(dy) * 0.8), duration: 0.7),
+                    SKAction.fadeOut(withDuration: 0.7),
+                    SKAction.scale(to: 2.5, duration: 0.7)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
 
         die(scene: scene)
     }

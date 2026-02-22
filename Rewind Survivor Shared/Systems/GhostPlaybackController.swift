@@ -4,7 +4,7 @@ class GhostPlaybackController {
     private(set) var activeGhosts: [GhostNode] = []
 
     /// Max ghosts in the orbit ring before upgrades kick in
-    static let maxOrbitGhosts = 10
+    static let maxOrbitGhosts = 8
 
     func spawnGhost(from recording: GhostRecording, scene: SKScene) {
         guard !recording.snapshots.isEmpty else { return }

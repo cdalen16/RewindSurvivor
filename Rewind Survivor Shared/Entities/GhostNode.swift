@@ -227,8 +227,8 @@ class GhostNode: SKSpriteNode {
     func assignOrbitSlot(index: Int, totalGhosts: Int) {
         let sliceAngle = (.pi * 2) / CGFloat(max(totalGhosts, 1))
         orbitAngle = sliceAngle * CGFloat(index)
-        // Alternate radius slightly so ghosts on opposite sides don't overlap at center
-        orbitRadius = 80 + CGFloat(index % 2) * 30
+        // Alternate radius so ghosts on opposite sides don't overlap — pushed out to clear frost aura
+        orbitRadius = 120 + CGFloat(index % 2) * 30
     }
 
     func cleanup() {
