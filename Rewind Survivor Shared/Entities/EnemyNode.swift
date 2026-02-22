@@ -17,6 +17,7 @@ class EnemyNode: SKSpriteNode {
     var isFrozen: Bool = false
     private(set) var baseSpeed: CGFloat = 0
     private var isSlowed: Bool = false
+    private var currentSlowPercent: CGFloat = 0
     private(set) var isChronoSlowed: Bool = false
     private var chronoSlowMultiplier: CGFloat = 1.0
 
@@ -476,6 +477,7 @@ class EnemyNode: SKSpriteNode {
 
     func applySlow(_ percent: CGFloat) {
         isSlowed = true
+        currentSlowPercent = percent
         moveSpeed = baseSpeed * (1.0 - percent)
         colorBlendFactor = 0.6
         color = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)
@@ -503,7 +505,7 @@ class EnemyNode: SKSpriteNode {
         isChronoSlowed = false
         chronoSlowMultiplier = 1.0
         if isSlowed {
-            moveSpeed = baseSpeed * (1.0 - 0.5) // restore freeze aura slow
+            moveSpeed = baseSpeed * (1.0 - currentSlowPercent)
         } else {
             moveSpeed = baseSpeed
             colorBlendFactor = 0

@@ -311,7 +311,7 @@ class HUDNode: SKNode {
     func handleTap(at point: CGPoint) -> Bool {
         let dx = point.x - pauseButton.position.x
         let dy = point.y - pauseButton.position.y
-        if abs(dx) < 30 && abs(dy) < 30 {
+        if abs(dx) < 44 && abs(dy) < 44 {
             pauseButton.run(SKAction.sequence([
                 SKAction.scale(to: 0.8, duration: 0.05),
                 SKAction.scale(to: 1.0, duration: 0.05),

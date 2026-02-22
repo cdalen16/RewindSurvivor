@@ -1177,6 +1177,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             enemy.update(deltaTime: dt, targets: targets)
         }
 
+        // Catch death from non-contact damage (e.g. bomber explosion)
+        if player.hp <= 0 && !player.isHidden {
+            onPlayerDeath()
+            return
+        }
+
         // Wave manager
         waveManager.update(
             deltaTime: dt,

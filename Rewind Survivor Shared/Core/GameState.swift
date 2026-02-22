@@ -167,7 +167,7 @@ class GameState {
         let previousThreshold = nextDeathThresholdIndex > 0 ? GameConfig.deathThreshold(forIndex: nextDeathThresholdIndex - 1) : 0
         let range = threshold - previousThreshold
         guard range > 0 else { return 1.0 }
-        return CGFloat(score - previousThreshold) / CGFloat(range)
+        return min(1.0, max(0.0, CGFloat(score - previousThreshold) / CGFloat(range)))
     }
 
     func reset() {

@@ -29,6 +29,7 @@ class SuperPowerUpManager {
     // MARK: - Apply Effects
 
     func apply(_ type: SuperPowerUpType, gameState: GameState, scene: SKScene, player: PlayerNode, enemies: [EnemyNode], combatSystem: CombatSystem) {
+        guard gameState.deathsRemaining >= type.deathCost else { return }
         gameState.deathsRemaining -= type.deathCost
         gameState.acquiredSuperPowerUps.insert(type)
 
