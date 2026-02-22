@@ -2,37 +2,37 @@ import SpriteKit
 
 enum SuperPowerUpType: String, CaseIterable, Codable, Hashable {
     case chronoShift
-    case quantumNuke
-    case shadowClone
-    case gravitySingularity
+    case radiationField
+    case shockwavePulse
+    case elementalStorm
     case voidBarrier
 
     var displayName: String {
         switch self {
         case .chronoShift: return "Chrono Shift"
-        case .quantumNuke: return "Quantum Nuke"
-        case .shadowClone: return "Shadow Clone"
-        case .gravitySingularity: return "Gravity Singularity"
+        case .radiationField: return "Radiation Field"
+        case .shockwavePulse: return "Shockwave Pulse"
+        case .elementalStorm: return "Elemental Storm"
         case .voidBarrier: return "Void Barrier"
         }
     }
 
     var description: String {
         switch self {
-        case .chronoShift: return "All enemies slowed to 40% speed for 15s"
-        case .quantumNuke: return "150 damage to ALL enemies in the arena"
-        case .shadowClone: return "AI clone orbits you and fires at enemies"
-        case .gravitySingularity: return "Black hole pulls and damages nearby enemies for 20s"
-        case .voidBarrier: return "Energy ring destroys enemy projectiles for 20s"
+        case .chronoShift: return "All enemies permanently slowed to 40% speed"
+        case .radiationField: return "Toxic aura burns all nearby enemies continuously"
+        case .shockwavePulse: return "Massive shockwave pushes all enemies back every 10s"
+        case .elementalStorm: return "Random elemental blast every 10 seconds"
+        case .voidBarrier: return "Energy ring permanently destroys enemy projectiles"
         }
     }
 
     var deathCost: Int {
         switch self {
         case .chronoShift: return 1
-        case .quantumNuke: return 2
-        case .shadowClone: return 2
-        case .gravitySingularity: return 1
+        case .radiationField: return 2
+        case .shockwavePulse: return 2
+        case .elementalStorm: return 1
         case .voidBarrier: return 1
         }
     }
@@ -40,20 +40,20 @@ enum SuperPowerUpType: String, CaseIterable, Codable, Hashable {
     var iconColor: SKColor {
         switch self {
         case .chronoShift: return ColorPalette.superChronoShift
-        case .quantumNuke: return ColorPalette.superQuantumNuke
-        case .shadowClone: return ColorPalette.superShadowClone
-        case .gravitySingularity: return ColorPalette.superGravitySingularity
+        case .radiationField: return ColorPalette.superRadiationField
+        case .shockwavePulse: return ColorPalette.superShockwavePulse
+        case .elementalStorm: return ColorPalette.superElementalStorm
         case .voidBarrier: return ColorPalette.superVoidBarrier
         }
     }
 
     var duration: TimeInterval {
         switch self {
-        case .chronoShift: return 15.0
-        case .quantumNuke: return 0 // instant
-        case .shadowClone: return .infinity // permanent
-        case .gravitySingularity: return 20.0
-        case .voidBarrier: return 20.0
+        case .chronoShift: return .infinity // permanent
+        case .radiationField: return .infinity // permanent
+        case .shockwavePulse: return .infinity // permanent
+        case .elementalStorm: return .infinity // permanent
+        case .voidBarrier: return .infinity // permanent
         }
     }
 }

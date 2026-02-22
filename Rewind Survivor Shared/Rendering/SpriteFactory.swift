@@ -2170,39 +2170,58 @@ class SpriteFactory {
                     // Center dot
                     px(11, 12, w); px(12, 12, w)
 
-                case .quantumNuke:
-                    // Explosion burst — radiating lines
-                    for y in 4...19 { px(11, y, w); px(12, y, w) }
-                    for x in 4...19 { px(x, 11, w); px(x, 12, w) }
-                    // Diagonals
-                    for d in 4...9 {
-                        px(6 + d, 6 + d, ic); px(17 - d, 6 + d, ic)
-                        px(6 + d, 17 - d, ic); px(17 - d, 17 - d, ic)
-                    }
-                    // Center core
+                case .radiationField:
+                    // Radiation trefoil symbol
+                    // Center circle
                     for y in 10...13 { for x in 10...13 { px(x, y, w) } }
+                    // Three radiation lobes
+                    // Top lobe
+                    for y in 4...9 { px(11, y, ic); px(12, y, ic) }
+                    px(10, 5, ic); px(13, 5, ic); px(10, 6, ic); px(13, 6, ic)
+                    // Bottom-left lobe
+                    for y in 14...19 { px(7, y, ic); px(8, y, ic) }
+                    px(6, 15, ic); px(9, 15, ic); px(6, 16, ic); px(9, 16, ic)
+                    // Bottom-right lobe
+                    for y in 14...19 { px(15, y, ic); px(16, y, ic) }
+                    px(14, 15, ic); px(17, 15, ic); px(14, 16, ic); px(17, 16, ic)
+                    // Outer ring
+                    for x in 7...16 { px(x, 4, ic.withAlphaComponent(0.4)); px(x, 19, ic.withAlphaComponent(0.4)) }
+                    for y in 7...16 { px(4, y, ic.withAlphaComponent(0.4)); px(19, y, ic.withAlphaComponent(0.4)) }
 
-                case .shadowClone:
-                    // Two overlapping figures
-                    // Back figure (dimmer)
-                    let dim = ic.withAlphaComponent(0.5)
-                    for y in 6...9 { for x in 13...16 { px(x, y, dim) } }
-                    for y in 10...17 { for x in 12...17 { px(x, y, dim) } }
-                    // Front figure
-                    for y in 7...10 { for x in 7...10 { px(x, y, w) } }
-                    for y in 11...18 { for x in 6...11 { px(x, y, ic) } }
+                case .shockwavePulse:
+                    // Expanding concentric rings (shockwave)
+                    // Inner ring
+                    for x in 9...14 { px(x, 9, w); px(x, 14, w) }
+                    for y in 9...14 { px(9, y, w); px(14, y, w) }
+                    // Center dot
+                    px(11, 11, w); px(12, 11, w); px(11, 12, w); px(12, 12, w)
+                    // Outer ring
+                    for x in 6...17 { px(x, 6, ic); px(x, 17, ic) }
+                    for y in 6...17 { px(6, y, ic); px(17, y, ic) }
+                    px(7, 7, ic); px(16, 7, ic); px(7, 16, ic); px(16, 16, ic)
+                    // Outward arrows/rays
+                    px(4, 11, ic); px(4, 12, ic); px(19, 11, ic); px(19, 12, ic)
+                    px(11, 4, ic); px(12, 4, ic); px(11, 19, ic); px(12, 19, ic)
 
-                case .gravitySingularity:
-                    // Black hole with swirl
-                    // Core
-                    for y in 9...14 { for x in 9...14 { px(x, y, SKColor(red: 0.05, green: 0, blue: 0.1, alpha: 1)) } }
-                    // Ring
-                    for x in 7...16 { px(x, 7, ic); px(x, 16, ic) }
-                    for y in 7...16 { px(7, y, ic); px(16, y, ic) }
-                    px(8, 8, ic); px(15, 8, ic); px(8, 15, ic); px(15, 15, ic)
-                    // Spiral lines
-                    px(5, 10, w); px(6, 8, w); px(8, 6, w); px(10, 5, w)
-                    px(18, 13, w); px(17, 15, w); px(15, 17, w); px(13, 18, w)
+                case .elementalStorm:
+                    // Storm with lightning bolt and swirl
+                    // Cloud top
+                    for x in 5...18 { px(x, 5, ic.withAlphaComponent(0.5)); px(x, 6, ic.withAlphaComponent(0.5)) }
+                    for x in 7...16 { px(x, 4, ic.withAlphaComponent(0.3)) }
+                    // Lightning bolt center
+                    px(13, 7, w); px(12, 8, w); px(11, 9, w); px(10, 10, w)
+                    px(10, 11, w); px(11, 11, w); px(12, 11, w); px(13, 11, w)
+                    px(12, 12, w); px(11, 13, w); px(10, 14, w); px(9, 15, w)
+                    // Bolt glow
+                    px(14, 7, ic); px(13, 8, ic); px(12, 9, ic); px(11, 10, ic)
+                    px(13, 12, ic); px(12, 13, ic); px(11, 14, ic); px(10, 15, ic)
+                    // Swirl elements (fire/ice)
+                    let fire = SKColor(red: 1.0, green: 0.3, blue: 0.1, alpha: 0.6)
+                    let iceC = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.6)
+                    px(6, 9, fire); px(7, 10, fire); px(6, 14, fire); px(7, 15, fire)
+                    px(16, 9, iceC); px(17, 10, iceC); px(16, 14, iceC); px(17, 15, iceC)
+                    // Bottom sparks
+                    px(8, 17, w); px(14, 17, w); px(11, 18, w)
 
                 case .voidBarrier:
                     // Shield ring

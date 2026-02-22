@@ -62,28 +62,34 @@ class SuperPowerUpSelectionNode: SKNode {
         bankLabel.horizontalAlignmentMode = .center
         addChild(bankLabel)
 
-        // Cards (adaptive width to fit screen)
+        // 2-row card layout: row 1 = first 3, row 2 = remaining
         let spacing: CGFloat = 12
-        let sideMargin: CGFloat = 16
-        let maxCardWidth: CGFloat = 140
-        let cardWidth = min(maxCardWidth, (screenSize.width - sideMargin * 2 - CGFloat(max(0, choices.count - 1)) * spacing) / CGFloat(max(1, choices.count)))
-        let cardHeight = cardWidth * 180 / 140
-        let totalWidth = CGFloat(choices.count) * cardWidth + CGFloat(max(0, choices.count - 1)) * spacing
-        let startX = -totalWidth / 2 + cardWidth / 2
+        let cardWidth: CGFloat = 110
+        let cardsTopY = screenSize.height * 0.18
+        let cardsBottomY = -screenSize.height * 0.26
+        let rowGap: CGFloat = 14
+        let availableHeight = cardsTopY - cardsBottomY
+        let cardHeight = min(150, (availableHeight - rowGap) / 2)
 
-        for (i, type) in choices.enumerated() {
+        // Row 1: first 3 (or fewer)
+        let row1Count = min(3, choices.count)
+        let row1Y = rowGap / 2 + cardHeight / 2
+        let row1Width = CGFloat(row1Count) * cardWidth + CGFloat(max(0, row1Count - 1)) * spacing
+        let row1StartX = -row1Width / 2 + cardWidth / 2
+
+        for i in 0..<row1Count {
+            let type = choices[i]
             let affordable = deathsAvailable >= type.deathCost
             let card = SuperPowerUpCardNode(type: type, affordable: affordable,
                                              size: CGSize(width: cardWidth, height: cardHeight))
-            card.position = CGPoint(x: startX + CGFloat(i) * (cardWidth + spacing), y: 0)
+            card.position = CGPoint(x: row1StartX + CGFloat(i) * (cardWidth + spacing), y: row1Y)
             card.zPosition = 1
             addChild(card)
             cards.append(card)
 
-            // Animate in
             card.alpha = 0; card.setScale(0.5)
             card.run(SKAction.sequence([
-                SKAction.wait(forDuration: 0.1 + Double(i) * 0.1),
+                SKAction.wait(forDuration: 0.1 + Double(i) * 0.08),
                 SKAction.group([
                     SKAction.fadeIn(withDuration: 0.3),
                     SKAction.scale(to: 1.0, duration: 0.3)
@@ -91,9 +97,38 @@ class SuperPowerUpSelectionNode: SKNode {
             ]))
         }
 
+        // Row 2: remaining cards (centered)
+        if choices.count > 3 {
+            let row2Count = choices.count - 3
+            let row2Y = -(rowGap / 2 + cardHeight / 2)
+            let row2Width = CGFloat(row2Count) * cardWidth + CGFloat(max(0, row2Count - 1)) * spacing
+            let row2StartX = -row2Width / 2 + cardWidth / 2
+
+            for j in 0..<row2Count {
+                let i = 3 + j
+                let type = choices[i]
+                let affordable = deathsAvailable >= type.deathCost
+                let card = SuperPowerUpCardNode(type: type, affordable: affordable,
+                                                 size: CGSize(width: cardWidth, height: cardHeight))
+                card.position = CGPoint(x: row2StartX + CGFloat(j) * (cardWidth + spacing), y: row2Y)
+                card.zPosition = 1
+                addChild(card)
+                cards.append(card)
+
+                card.alpha = 0; card.setScale(0.5)
+                card.run(SKAction.sequence([
+                    SKAction.wait(forDuration: 0.1 + Double(i) * 0.08),
+                    SKAction.group([
+                        SKAction.fadeIn(withDuration: 0.3),
+                        SKAction.scale(to: 1.0, duration: 0.3)
+                    ])
+                ]))
+            }
+        }
+
         // Skip button
         let skipContainer = SKNode()
-        skipContainer.position = CGPoint(x: 0, y: -screenSize.height * 0.28)
+        skipContainer.position = CGPoint(x: 0, y: -screenSize.height * 0.32)
         skipContainer.name = "skipButton"
         skipContainer.zPosition = 1
 
@@ -181,9 +216,15 @@ class SuperPowerUpCardNode: SKNode {
         outerBorder.lineWidth = 1
         addChild(outerBorder)
 
+        // Scale content with card size
+        let iconSize = min(40, size.height * 0.28)
+        let nameFontSize = min(13, size.width * 0.12)
+        let descFontSize = min(10, size.width * 0.09)
+        let skullFontSize = min(16, size.height * 0.11)
+
         // Icon
         let icon = SKSpriteNode(texture: SpriteFactory.shared.superPowerUpIconTexture(type: type))
-        icon.size = CGSize(width: 40, height: 40)
+        icon.size = CGSize(width: iconSize, height: iconSize)
         icon.position = CGPoint(x: 0, y: size.height * 0.25)
         icon.alpha = affordable ? 1.0 : 0.3
         addChild(icon)
@@ -191,7 +232,7 @@ class SuperPowerUpCardNode: SKNode {
         // Name
         let nameLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         nameLabel.text = type.displayName
-        nameLabel.fontSize = 11
+        nameLabel.fontSize = nameFontSize
         nameLabel.fontColor = affordable ? type.iconColor : ColorPalette.textSecondary.withAlphaComponent(0.4)
         nameLabel.position = CGPoint(x: 0, y: size.height * 0.05)
         nameLabel.verticalAlignmentMode = .center
@@ -201,9 +242,9 @@ class SuperPowerUpCardNode: SKNode {
         // Description
         let descLabel = SKLabelNode(fontNamed: "Menlo")
         descLabel.text = type.description
-        descLabel.fontSize = 8
+        descLabel.fontSize = descFontSize
         descLabel.fontColor = (affordable ? ColorPalette.textSecondary : ColorPalette.textSecondary.withAlphaComponent(0.3))
-        descLabel.position = CGPoint(x: 0, y: -size.height * 0.08)
+        descLabel.position = CGPoint(x: 0, y: -size.height * 0.1)
         descLabel.verticalAlignmentMode = .top
         descLabel.horizontalAlignmentMode = .center
         descLabel.numberOfLines = 3
@@ -211,13 +252,13 @@ class SuperPowerUpCardNode: SKNode {
         addChild(descLabel)
 
         // Death cost (skull icons)
-        let costY = -size.height * 0.32
-        let skullSpacing: CGFloat = 18
+        let costY = -size.height * 0.35
+        let skullSpacing: CGFloat = min(18, size.width * 0.15)
         let skullStartX = -CGFloat(type.deathCost - 1) * skullSpacing / 2
         for i in 0..<type.deathCost {
             let skull = SKLabelNode(fontNamed: "Menlo-Bold")
             skull.text = "☠"
-            skull.fontSize = 16
+            skull.fontSize = skullFontSize
             skull.fontColor = affordable ? ColorPalette.rewindMagenta : ColorPalette.textSecondary.withAlphaComponent(0.3)
             skull.position = CGPoint(x: skullStartX + CGFloat(i) * skullSpacing, y: costY)
             skull.verticalAlignmentMode = .center

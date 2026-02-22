@@ -2,15 +2,15 @@ import SpriteKit
 
 class SuperPowerUpManager {
     // Active effect tracking
-    private var chronoShiftTimer: TimeInterval = 0
     private var chronoShiftActive: Bool = false
-    private var singularityNode: GravitySingularityNode?
+    private var radiationFieldNode: RadiationFieldNode?
+    private var shockwavePulseNode: ShockwavePulseNode?
+    private var elementalStormNode: ElementalStormNode?
     private var voidBarrierNode: VoidBarrierNode?
-    private(set) var shadowCloneNode: ShadowCloneNode?
 
     /// Whether to show super selection after this wave
     func shouldShowSuperSelection(wave: Int, deathsAvailable: Int, acquired: Set<SuperPowerUpType>) -> Bool {
-        guard wave >= 15 && (wave - 15) % 5 == 0 else { return false }
+        guard wave >= 15, deathsAvailable >= 1 else { return false }
         let available = generateChoices(deathsAvailable: deathsAvailable, acquired: acquired)
         return !available.isEmpty
     }
@@ -37,14 +37,14 @@ class SuperPowerUpManager {
         case .chronoShift:
             applyChronoShift(enemies: enemies)
 
-        case .quantumNuke:
-            applyQuantumNuke(scene: scene, enemies: enemies)
+        case .radiationField:
+            applyRadiationField(scene: scene, player: player)
 
-        case .shadowClone:
-            applyShadowClone(scene: scene, player: player)
+        case .shockwavePulse:
+            applyShockwavePulse(scene: scene, player: player)
 
-        case .gravitySingularity:
-            applyGravitySingularity(scene: scene, player: player)
+        case .elementalStorm:
+            applyElementalStorm(scene: scene, player: player)
 
         case .voidBarrier:
             applyVoidBarrier(scene: scene, player: player)
@@ -53,76 +53,30 @@ class SuperPowerUpManager {
 
     private func applyChronoShift(enemies: [EnemyNode]) {
         chronoShiftActive = true
-        chronoShiftTimer = SuperPowerUpType.chronoShift.duration
         for enemy in enemies {
             enemy.applyChronoSlow()
         }
     }
 
-    private func applyQuantumNuke(scene: SKScene, enemies: [EnemyNode]) {
-        let damage: CGFloat = 150
-        for enemy in enemies {
-            guard enemy.parent != nil && enemy.hp > 0 else { continue }
-            enemy.takeDamage(damage)
-        }
-
-        // White flash
-        let flash = SKSpriteNode(color: .white, size: scene.size)
-        flash.position = scene.camera?.position ?? .zero
-        flash.zPosition = 500
-        flash.blendMode = .add
-        flash.alpha = 0.9
-        scene.addChild(flash)
-        flash.run(SKAction.sequence([
-            SKAction.fadeOut(withDuration: 0.5),
-            SKAction.removeFromParent()
-        ]))
-
-        // Shockwave ring from center
-        let ring = SKShapeNode(circleOfRadius: 20)
-        ring.strokeColor = .white
-        ring.fillColor = .clear
-        ring.lineWidth = 4
-        ring.position = scene.camera?.position ?? .zero
-        ring.zPosition = 499
-        ring.blendMode = .add
-        scene.addChild(ring)
-        ring.run(SKAction.sequence([
-            SKAction.group([
-                SKAction.scale(to: 40.0, duration: 0.6),
-                SKAction.fadeOut(withDuration: 0.6)
-            ]),
-            SKAction.removeFromParent()
-        ]))
+    private func applyRadiationField(scene: SKScene, player: PlayerNode) {
+        let field = RadiationFieldNode()
+        field.position = player.position
+        scene.addChild(field)
+        radiationFieldNode = field
     }
 
-    private func applyShadowClone(scene: SKScene, player: PlayerNode) {
-        let clone = ShadowCloneNode()
-        clone.position = CGPoint(x: player.position.x + 80, y: player.position.y)
-        scene.addChild(clone)
-        shadowCloneNode = clone
-
-        // Spawn VFX
-        let flash = SKSpriteNode(color: ColorPalette.superShadowClone, size: CGSize(width: 40, height: 40))
-        flash.position = clone.position
-        flash.zPosition = 200
-        flash.blendMode = .add
-        flash.alpha = 0.8
-        scene.addChild(flash)
-        flash.run(SKAction.sequence([
-            SKAction.group([
-                SKAction.fadeOut(withDuration: 0.3),
-                SKAction.scale(to: 3.0, duration: 0.3)
-            ]),
-            SKAction.removeFromParent()
-        ]))
+    private func applyShockwavePulse(scene: SKScene, player: PlayerNode) {
+        let pulse = ShockwavePulseNode()
+        pulse.position = player.position
+        scene.addChild(pulse)
+        shockwavePulseNode = pulse
     }
 
-    private func applyGravitySingularity(scene: SKScene, player: PlayerNode) {
-        let singularity = GravitySingularityNode(duration: SuperPowerUpType.gravitySingularity.duration)
-        singularity.position = player.position
-        scene.addChild(singularity)
-        singularityNode = singularity
+    private func applyElementalStorm(scene: SKScene, player: PlayerNode) {
+        let storm = ElementalStormNode()
+        storm.position = player.position
+        scene.addChild(storm)
+        elementalStormNode = storm
     }
 
     private func applyVoidBarrier(scene: SKScene, player: PlayerNode) {
@@ -136,40 +90,42 @@ class SuperPowerUpManager {
 
     func update(deltaTime: TimeInterval, scene: SKScene, enemies: [EnemyNode], player: PlayerNode,
                 gameState: GameState, combatSystem: CombatSystem) {
-        // Chrono Shift
+        // Chrono Shift — permanently slow all enemies
         if chronoShiftActive {
-            chronoShiftTimer -= deltaTime
-            // Apply slow to newly spawned enemies too
             for enemy in enemies {
                 if !enemy.isChronoSlowed {
                     enemy.applyChronoSlow()
                 }
             }
-            if chronoShiftTimer <= 0 {
-                chronoShiftActive = false
-                for enemy in enemies {
-                    enemy.removeChronoSlow()
-                }
+        }
+
+        // Radiation Field
+        if let field = radiationFieldNode {
+            if field.parent == nil {
+                radiationFieldNode = nil
+            } else {
+                field.update(deltaTime: deltaTime, playerPosition: player.position,
+                           enemies: enemies, scene: scene)
             }
         }
 
-        // Shadow Clone
-        if let clone = shadowCloneNode {
-            if clone.parent == nil {
-                shadowCloneNode = nil
+        // Shockwave Pulse
+        if let pulse = shockwavePulseNode {
+            if pulse.parent == nil {
+                shockwavePulseNode = nil
             } else {
-                clone.update(deltaTime: deltaTime, playerPosition: player.position,
-                           enemies: enemies, combatSystem: combatSystem, scene: scene, gameState: gameState)
+                pulse.update(deltaTime: deltaTime, playerPosition: player.position,
+                           enemies: enemies, scene: scene)
             }
         }
 
-        // Gravity Singularity
-        if let singularity = singularityNode {
-            if singularity.parent == nil {
-                singularityNode = nil
+        // Elemental Storm
+        if let storm = elementalStormNode {
+            if storm.parent == nil {
+                elementalStormNode = nil
             } else {
-                let expired = singularity.update(deltaTime: deltaTime, enemies: enemies, gameState: gameState)
-                if expired { singularityNode = nil }
+                storm.update(deltaTime: deltaTime, playerPosition: player.position,
+                           enemies: enemies, scene: scene)
             }
         }
 
@@ -188,24 +144,50 @@ class SuperPowerUpManager {
 
     func reset() {
         chronoShiftActive = false
-        chronoShiftTimer = 0
-        singularityNode?.removeFromParent()
-        singularityNode = nil
+        radiationFieldNode?.removeFromParent()
+        radiationFieldNode = nil
+        shockwavePulseNode?.removeFromParent()
+        shockwavePulseNode = nil
+        elementalStormNode?.removeFromParent()
+        elementalStormNode = nil
         voidBarrierNode?.removeFromParent()
         voidBarrierNode = nil
-        shadowCloneNode?.removeFromParent()
-        shadowCloneNode = nil
     }
 
     func removeAllEffects() {
         reset()
     }
 
-    /// Respawn shadow clone (for save/resume)
-    func respawnShadowClone(scene: SKScene, player: PlayerNode) {
-        let clone = ShadowCloneNode()
-        clone.position = CGPoint(x: player.position.x + 80, y: player.position.y)
-        scene.addChild(clone)
-        shadowCloneNode = clone
+    /// Respawn persistent super power-ups (for save/resume)
+    func respawnSuperPowerUps(acquired: Set<SuperPowerUpType>, scene: SKScene, player: PlayerNode, enemies: [EnemyNode]) {
+        for type in acquired {
+            switch type {
+            case .chronoShift:
+                chronoShiftActive = true
+                for enemy in enemies {
+                    enemy.applyChronoSlow()
+                }
+            case .radiationField:
+                let field = RadiationFieldNode()
+                field.position = player.position
+                scene.addChild(field)
+                radiationFieldNode = field
+            case .shockwavePulse:
+                let pulse = ShockwavePulseNode()
+                pulse.position = player.position
+                scene.addChild(pulse)
+                shockwavePulseNode = pulse
+            case .elementalStorm:
+                let storm = ElementalStormNode()
+                storm.position = player.position
+                scene.addChild(storm)
+                elementalStormNode = storm
+            case .voidBarrier:
+                let barrier = VoidBarrierNode(duration: SuperPowerUpType.voidBarrier.duration)
+                barrier.position = player.position
+                scene.addChild(barrier)
+                voidBarrierNode = barrier
+            }
+        }
     }
 }

@@ -78,7 +78,7 @@ enum PowerUpType: String, CaseIterable {
         case .multishot: return "+1 projectile"
         case .piercing: return "Pierce +1 enemy"
         case .moveSpeed: return "Move faster"
-        case .maxHP: return "+25 max HP"
+        case .maxHP: return "+50 max HP"
         case .ghostDamage: return "Ghosts hit harder"
         case .orbitalShield: return "Orbiting projectile"
         case .magnetRange: return "Wider pickup range"

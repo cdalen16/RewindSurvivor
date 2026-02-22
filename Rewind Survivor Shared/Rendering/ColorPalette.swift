@@ -49,9 +49,9 @@ struct ColorPalette {
 
     // MARK: - Super Power-Ups
     static let superChronoShift = SKColor(red: 0.6, green: 0.3, blue: 1.0, alpha: 1.0)     // Purple
-    static let superQuantumNuke = SKColor(red: 1.0, green: 1.0, blue: 0.9, alpha: 1.0)      // White-hot
-    static let superShadowClone = SKColor(red: 0.5, green: 0.0, blue: 1.0, alpha: 1.0)      // Deep purple
-    static let superGravitySingularity = SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0) // Dark purple
+    static let superRadiationField = SKColor(red: 0.2, green: 1.0, blue: 0.0, alpha: 1.0)    // Toxic green
+    static let superShockwavePulse = SKColor(red: 0.0, green: 0.6, blue: 1.0, alpha: 1.0)    // Electric blue
+    static let superElementalStorm = SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1.0)   // Fiery orange
     static let superVoidBarrier = SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1.0)      // Bright cyan
 
     // MARK: - Rewind Effect

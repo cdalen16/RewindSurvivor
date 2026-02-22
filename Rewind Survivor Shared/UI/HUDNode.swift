@@ -308,6 +308,29 @@ class HUDNode: SKNode {
         ]))
     }
 
+    func showOverflowBuff() {
+        let label = SKLabelNode(fontNamed: "Menlo-Bold")
+        label.text = "ALL MAXED! +10% DMG"
+        label.fontSize = 22
+        label.fontColor = ColorPalette.gold
+        label.position = CGPoint(x: 0, y: -30)
+        label.zPosition = 1001
+        addChild(label)
+
+        label.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.moveBy(x: 0, y: 60, duration: 1.0),
+                SKAction.sequence([
+                    SKAction.fadeIn(withDuration: 0.2),
+                    SKAction.wait(forDuration: 0.5),
+                    SKAction.fadeOut(withDuration: 0.3)
+                ]),
+                SKAction.scale(to: 1.3, duration: 1.0)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+    }
+
     func handleTap(at point: CGPoint) -> Bool {
         let dx = point.x - pauseButton.position.x
         let dy = point.y - pauseButton.position.y

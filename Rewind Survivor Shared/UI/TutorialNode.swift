@@ -417,7 +417,7 @@ class TutorialNode: SKNode {
                 parent.addChild(arrow)
 
                 // Super power-up icons
-                let supers: [SuperPowerUpType] = [.chronoShift, .quantumNuke, .shadowClone]
+                let supers: [SuperPowerUpType] = [.chronoShift, .radiationField, .shockwavePulse]
                 for (i, superType) in supers.enumerated() {
                     let x = CGFloat(i - 1) * 45 - 15
                     let icon = SKSpriteNode(texture: SpriteFactory.shared.superPowerUpIconTexture(type: superType))

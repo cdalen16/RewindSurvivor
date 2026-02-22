@@ -24,9 +24,9 @@ class PowerUpManager {
             gameState.playerSpeedMultiplier += 0.15
 
         case .maxHP:
-            gameState.playerHPBonus += 25
+            gameState.playerHPBonus += 50
             player.maxHP = GameConfig.playerBaseHP + gameState.playerHPBonus
-            player.heal(25)
+            player.heal(50)
 
         case .ghostDamage:
             gameState.playerGhostDamageMultiplier += 0.15
@@ -64,7 +64,7 @@ class PowerUpManager {
         }
 
         guard !available.isEmpty else {
-            return Array(PowerUpType.allCases.prefix(count))
+            return []
         }
 
         var choices: [PowerUpType] = []

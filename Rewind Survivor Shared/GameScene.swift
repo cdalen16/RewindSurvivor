@@ -731,6 +731,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.gamePhase = .powerUpSelect
         inputManager.reset()
         let choices = powerUpManager.generateChoices(count: 3, gameState: gameState)
+
+        // All power-ups maxed — give a flat damage buff and start next wave
+        guard !choices.isEmpty else {
+            gameState.playerDamageMultiplier += 0.10
+            hud.showOverflowBuff()
+            gameState.gamePhase = .playing
+            beginWave()
+            return
+        }
+
         powerUpSelection.show(choices: choices, gameState: gameState, screenSize: size) { [weak self] selected in
             guard let self = self else { return }
             self.powerUpManager.apply(selected, to: self.gameState, player: self.player)
@@ -1046,9 +1056,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
         }
 
-        // Respawn shadow clone if acquired
-        if gameState.acquiredSuperPowerUps.contains(.shadowClone) {
-            superPowerUpManager.respawnShadowClone(scene: self, player: player)
+        // Respawn all acquired super power-ups
+        if !gameState.acquiredSuperPowerUps.isEmpty {
+            superPowerUpManager.respawnSuperPowerUps(
+                acquired: gameState.acquiredSuperPowerUps, scene: self,
+                player: player, enemies: waveManager.activeEnemies
+            )
         }
 
         hud.show()
@@ -1423,13 +1436,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         else if maskA == PhysicsCategory.player && maskB == PhysicsCategory.pickup {
             handlePickupCollected(pickup: bodyB.node as? PickupNode)
         }
-        // Shadow clone hit by enemy bullet: ghost(16) + enemyBullet(8)
-        else if maskA == PhysicsCategory.enemyBullet && maskB == PhysicsCategory.ghost {
-            handleEnemyBulletHitClone(projectile: bodyA.node as? ProjectileNode, clone: bodyB.node as? ShadowCloneNode)
-        }
-        else if maskA == PhysicsCategory.ghost && maskB == PhysicsCategory.enemyBullet {
-            handleEnemyBulletHitClone(projectile: bodyB.node as? ProjectileNode, clone: bodyA.node as? ShadowCloneNode)
-        }
         // Bullet hits wall/obstacle: bullet(4/8/32) + wall(64)
         // Always destroy on wall hit, even if piercing
         else if maskB == PhysicsCategory.wall {
@@ -1737,13 +1743,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if died {
             onPlayerDeath()
         }
-    }
-
-    private func handleEnemyBulletHitClone(projectile: ProjectileNode?, clone: ShadowCloneNode?) {
-        guard let projectile = projectile, let clone = clone else { return }
-        guard clone.parent != nil else { return }
-        clone.takeDamage(projectile.damage)
-        projectile.removeFromParent()
     }
 
     private func handleEnemyBulletHitPlayer(projectile: ProjectileNode?) {

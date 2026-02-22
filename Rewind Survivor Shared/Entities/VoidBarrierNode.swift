@@ -108,11 +108,6 @@ class VoidBarrierNode: SKNode {
             }
         }
 
-        // Fade at end
-        if remainingTime < 3.0 {
-            alpha = CGFloat(remainingTime / 3.0)
-        }
-
         return false
     }
 
