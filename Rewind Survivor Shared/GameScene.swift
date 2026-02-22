@@ -47,8 +47,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
 
     // MARK: - Scene Setup
 
-    class func newGameScene() -> GameScene {
-        let scene = GameScene(size: CGSize(width: 390, height: 844))
+    class func newGameScene(for viewSize: CGSize) -> GameScene {
+        // Use a fixed reference width; compute height from device aspect ratio
+        // so .aspectFill fills the screen with zero cropping on any device.
+        let referenceWidth: CGFloat = 390
+        let aspectRatio = viewSize.height / max(viewSize.width, 1)
+        let sceneHeight = referenceWidth * aspectRatio
+        let scene = GameScene(size: CGSize(width: referenceWidth, height: sceneHeight))
         scene.scaleMode = .aspectFill
         return scene
     }

@@ -62,10 +62,12 @@ class SuperPowerUpSelectionNode: SKNode {
         bankLabel.horizontalAlignmentMode = .center
         addChild(bankLabel)
 
-        // Cards
-        let cardWidth: CGFloat = 140
-        let cardHeight: CGFloat = 180
+        // Cards (adaptive width to fit screen)
         let spacing: CGFloat = 12
+        let sideMargin: CGFloat = 16
+        let maxCardWidth: CGFloat = 140
+        let cardWidth = min(maxCardWidth, (screenSize.width - sideMargin * 2 - CGFloat(max(0, choices.count - 1)) * spacing) / CGFloat(max(1, choices.count)))
+        let cardHeight = cardWidth * 180 / 140
         let totalWidth = CGFloat(choices.count) * cardWidth + CGFloat(max(0, choices.count - 1)) * spacing
         let startX = -totalWidth / 2 + cardWidth / 2
 

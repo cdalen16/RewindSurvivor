@@ -113,51 +113,62 @@ class MainMenuNode: SKNode {
             ])))
         }
 
-        // Button layout: stack from top, shift down if RESUME is shown
-        var buttonY = -screenSize.height * 0.1
-        var buttonNames: [String] = []
+        // Button layout: adaptive spacing for all screen sizes
+        let playText = hasSavedRun ? "NEW GAME" : "PLAY"
 
-        // RESUME button (only if saved run exists)
+        // (text, color, idealHeight, name)
+        var btnDefs: [(String, SKColor, CGFloat, String)] = []
         if hasSavedRun {
-            let resumeBtn = createButton(text: "RESUME", color: ColorPalette.rewindMagenta,
-                                          position: CGPoint(x: 0, y: buttonY),
-                                          size: CGSize(width: 200, height: 55), name: "resumeButton")
-            addChild(resumeBtn)
-            buttonNames.append("resumeButton")
-            buttonY -= screenSize.height * 0.09
+            btnDefs.append(("RESUME", ColorPalette.rewindMagenta, 55, "resumeButton"))
+        }
+        btnDefs.append((playText, ColorPalette.playerPrimary, 55, "playButton"))
+        btnDefs.append(("SHOP", ColorPalette.gold, 48, "shopButton"))
+        btnDefs.append(("RECORDS", ColorPalette.textSecondary, 48, "statsButton"))
+        btnDefs.append(("HOW TO PLAY", ColorPalette.textSecondary.withAlphaComponent(0.7), 40, "tutorialButton"))
+
+        // Available space: below ghost decorations to near screen bottom
+        let buttonsTopY = -screenSize.height * 0.06
+        let buttonsBottomY = -screenSize.height / 2 + 16
+        let availableHeight = buttonsTopY - buttonsBottomY
+
+        // Compute gap and scale to fit all buttons
+        let idealGap: CGFloat = 14
+        let minGap: CGFloat = 8
+        var totalIdealH: CGFloat = 0
+        for d in btnDefs { totalIdealH += d.2 }
+        let gapCount = CGFloat(max(1, btnDefs.count - 1))
+
+        let btnScale: CGFloat
+        let btnGap: CGFloat
+        if totalIdealH + gapCount * idealGap <= availableHeight {
+            btnScale = 1.0
+            btnGap = idealGap
+        } else if totalIdealH + gapCount * minGap <= availableHeight {
+            btnScale = 1.0
+            btnGap = (availableHeight - totalIdealH) / gapCount
+        } else {
+            btnScale = max(0.65, (availableHeight - gapCount * minGap) / totalIdealH)
+            btnGap = minGap
         }
 
-        // PLAY button (becomes NEW GAME if resume exists)
-        let playText = hasSavedRun ? "NEW GAME" : "PLAY"
-        let playBtn = createButton(text: playText, color: ColorPalette.playerPrimary,
-                                    position: CGPoint(x: 0, y: buttonY),
-                                    size: CGSize(width: 200, height: 55), name: "playButton")
-        addChild(playBtn)
-        buttonNames.append("playButton")
-        buttonY -= screenSize.height * 0.09
+        // Center the button stack vertically in available space
+        let btnHeights = btnDefs.map { $0.2 * btnScale }
+        let totalStackH = btnHeights.reduce(CGFloat(0), +) + gapCount * btnGap
+        let topPadding = max(0, (availableHeight - totalStackH) / 2)
 
-        // SHOP button
-        let shopBtn = createButton(text: "SHOP", color: ColorPalette.gold,
-                                    position: CGPoint(x: 0, y: buttonY),
-                                    size: CGSize(width: 200, height: 48), name: "shopButton")
-        addChild(shopBtn)
-        buttonNames.append("shopButton")
-        buttonY -= screenSize.height * 0.08
+        var buttonY = buttonsTopY - topPadding
+        var buttonNames: [String] = []
 
-        // RECORDS button
-        let statsBtn = createButton(text: "RECORDS", color: ColorPalette.textSecondary,
-                                     position: CGPoint(x: 0, y: buttonY),
-                                     size: CGSize(width: 200, height: 48), name: "statsButton")
-        addChild(statsBtn)
-        buttonNames.append("statsButton")
-        buttonY -= screenSize.height * 0.08
-
-        // HOW TO PLAY button
-        let tutBtn = createButton(text: "HOW TO PLAY", color: ColorPalette.textSecondary.withAlphaComponent(0.7),
+        for (i, def) in btnDefs.enumerated() {
+            let h = btnHeights[i]
+            buttonY -= h / 2
+            let btn = createButton(text: def.0, color: def.1,
                                    position: CGPoint(x: 0, y: buttonY),
-                                   size: CGSize(width: 200, height: 40), name: "tutorialButton")
-        addChild(tutBtn)
-        buttonNames.append("tutorialButton")
+                                   size: CGSize(width: 200, height: h), name: def.3)
+            addChild(btn)
+            buttonNames.append(def.3)
+            if i < btnDefs.count - 1 { buttonY -= h / 2 + btnGap }
+        }
 
         // Animate in
         title.alpha = 0; title.setScale(0.8)
@@ -190,7 +201,7 @@ class MainMenuNode: SKNode {
 
         let label = SKLabelNode(fontNamed: "Menlo-Bold")
         label.text = text
-        label.fontSize = 20
+        label.fontSize = min(20, size.height * 0.4)
         label.fontColor = color
         label.verticalAlignmentMode = .center
         label.horizontalAlignmentMode = .center

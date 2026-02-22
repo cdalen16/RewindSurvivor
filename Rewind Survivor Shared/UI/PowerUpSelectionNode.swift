@@ -43,11 +43,13 @@ class PowerUpSelectionNode: SKNode {
         titleLabel.zPosition = 1
         addChild(titleLabel)
 
-        // Cards
-        let cardWidth: CGFloat = 110
-        let cardHeight: CGFloat = 160
+        // Cards (adaptive width to fit screen)
         let spacing: CGFloat = 15
-        let totalWidth = CGFloat(choices.count) * cardWidth + CGFloat(choices.count - 1) * spacing
+        let sideMargin: CGFloat = 16
+        let maxCardWidth: CGFloat = 110
+        let cardWidth = min(maxCardWidth, (screenSize.width - sideMargin * 2 - CGFloat(max(0, choices.count - 1)) * spacing) / CGFloat(max(1, choices.count)))
+        let cardHeight = cardWidth * 160 / 110
+        let totalWidth = CGFloat(choices.count) * cardWidth + CGFloat(max(0, choices.count - 1)) * spacing
         let startX = -totalWidth / 2 + cardWidth / 2
 
         for (i, type) in choices.enumerated() {
