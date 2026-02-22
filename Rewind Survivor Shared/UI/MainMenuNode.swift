@@ -4,6 +4,7 @@ class MainMenuNode: SKNode {
     private var onPlay: (() -> Void)?
     private var onShop: (() -> Void)?
     private var onStats: (() -> Void)?
+    private var onCoinPurchase: (() -> Void)?
 
     override init() {
         super.init()
@@ -13,10 +14,11 @@ class MainMenuNode: SKNode {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    func show(screenSize: CGSize, onPlay: @escaping () -> Void, onShop: @escaping () -> Void, onStats: @escaping () -> Void) {
+    func show(screenSize: CGSize, onPlay: @escaping () -> Void, onShop: @escaping () -> Void, onStats: @escaping () -> Void, onCoinPurchase: @escaping () -> Void) {
         self.onPlay = onPlay
         self.onShop = onShop
         self.onStats = onStats
+        self.onCoinPurchase = onCoinPurchase
         self.isHidden = false
         self.alpha = 1
         removeAllChildren()
@@ -127,6 +129,33 @@ class MainMenuNode: SKNode {
                                      size: CGSize(width: 200, height: 48), name: "statsButton")
         addChild(statsBtn)
 
+        // Coin purchase button (top-right coin + "+" icon)
+        let coinBtn = SKNode()
+        coinBtn.position = CGPoint(x: screenSize.width * 0.3, y: screenSize.height * 0.35)
+        coinBtn.name = "coinPurchaseButton"
+        coinBtn.zPosition = 2
+
+        let coinBtnBg = SKShapeNode(rectOf: CGSize(width: 50, height: 32), cornerRadius: 8)
+        coinBtnBg.fillColor = ColorPalette.hudBackground
+        coinBtnBg.strokeColor = ColorPalette.gold
+        coinBtnBg.lineWidth = 1.5
+        coinBtn.addChild(coinBtnBg)
+
+        let coinSymbol = SKLabelNode(fontNamed: "Menlo-Bold")
+        coinSymbol.text = "\u{25C9}+"
+        coinSymbol.fontSize = 14
+        coinSymbol.fontColor = ColorPalette.gold
+        coinSymbol.verticalAlignmentMode = .center
+        coinSymbol.horizontalAlignmentMode = .center
+        coinBtn.addChild(coinSymbol)
+        addChild(coinBtn)
+
+        // Gentle pulse animation
+        coinBtn.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.06, duration: 0.8),
+            SKAction.scale(to: 1.0, duration: 0.8)
+        ])))
+
         // Animate in
         title.alpha = 0; title.setScale(0.8)
         title.run(SKAction.group([SKAction.fadeIn(withDuration: 0.5), SKAction.scale(to: 1.0, duration: 0.5)]))
@@ -170,6 +199,20 @@ class MainMenuNode: SKNode {
     func handleTouch(at point: CGPoint) {
         guard let parent = self.parent else { return }
         let localPoint = convert(point, from: parent)
+
+        // Check coin purchase button first
+        if let coinBtn = childNode(withName: "coinPurchaseButton") {
+            let btnLocal = coinBtn.convert(localPoint, from: self)
+            if abs(btnLocal.x) < 30 && abs(btnLocal.y) < 20 {
+                coinBtn.run(SKAction.sequence([
+                    SKAction.scale(to: 0.9, duration: 0.05),
+                    SKAction.scale(to: 1.0, duration: 0.05),
+                ])) { [weak self] in
+                    self?.onCoinPurchase?()
+                }
+                return
+            }
+        }
 
         for (name, action) in [("playButton", onPlay), ("shopButton", onShop), ("statsButton", onStats)] {
             guard let btn = childNode(withName: name), let callback = action else { continue }

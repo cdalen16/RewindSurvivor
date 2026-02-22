@@ -201,6 +201,72 @@ class PlayerNode: SKSpriteNode {
                 SKAction.removeFromParent()
             ]))
 
+        case "trail_vortex":
+            // Temporal Vortex — spiraling vortex clusters
+            let vortexColors: [SKColor] = [
+                SKColor(red: 0.5, green: 0.0, blue: 0.9, alpha: 1.0),  // deep purple
+                SKColor(red: 0.2, green: 0.4, blue: 1.0, alpha: 1.0),  // electric blue
+                SKColor(red: 1.0, green: 0.1, blue: 0.6, alpha: 1.0),  // hot magenta
+                SKColor(red: 0.7, green: 0.4, blue: 1.0, alpha: 1.0),  // light purple
+            ]
+            let clusterCount = Int.random(in: 3...4)
+            let centerOffset = CGPoint(x: CGFloat.random(in: -6...6), y: CGFloat.random(in: -6...6))
+            let centerPos = CGPoint(x: position.x + centerOffset.x, y: position.y + centerOffset.y)
+
+            for i in 0..<clusterCount {
+                let angle = (CGFloat(i) / CGFloat(clusterCount)) * .pi * 2 + CGFloat.random(in: -0.3...0.3)
+                let orbitRadius: CGFloat = 3.0
+                let startX = centerPos.x + cos(angle) * orbitRadius
+                let startY = centerPos.y + sin(angle) * orbitRadius
+
+                let particle = SKSpriteNode(color: vortexColors[i % vortexColors.count], size: CGSize(width: 3, height: 3))
+                particle.position = CGPoint(x: startX, y: startY)
+                particle.zPosition = 90
+                particle.alpha = 0.85
+                particle.blendMode = .add
+                scene.addChild(particle)
+
+                // Spiral outward path
+                let duration: TimeInterval = Double.random(in: 0.35...0.55)
+                let spiralAction = SKAction.customAction(withDuration: duration) { node, elapsed in
+                    let t = CGFloat(elapsed) / CGFloat(duration)
+                    let currentAngle = angle + t * .pi * 3 // 1.5 full rotations
+                    let expandRadius = orbitRadius + t * 12
+                    node.position = CGPoint(
+                        x: centerPos.x + cos(currentAngle) * expandRadius,
+                        y: centerPos.y + sin(currentAngle) * expandRadius
+                    )
+                    node.alpha = 0.85 * (1.0 - t)
+                    node.setScale(1.0 - t * 0.6)
+                }
+                particle.run(SKAction.sequence([spiralAction, SKAction.removeFromParent()]))
+            }
+
+            // 10% chance: time fracture line
+            if Int.random(in: 0..<10) == 0 {
+                let fracturePath = CGMutablePath()
+                let startFX = position.x + CGFloat.random(in: -12...12)
+                let startFY = position.y + CGFloat.random(in: -12...12)
+                fracturePath.move(to: CGPoint(x: startFX, y: startFY))
+                for _ in 0..<3 {
+                    fracturePath.addLine(to: CGPoint(
+                        x: startFX + CGFloat.random(in: -18...18),
+                        y: startFY + CGFloat.random(in: -18...18)
+                    ))
+                }
+                let fracture = SKShapeNode(path: fracturePath)
+                fracture.strokeColor = SKColor(red: 0.8, green: 0.6, blue: 1.0, alpha: 0.9)
+                fracture.lineWidth = 1.5
+                fracture.zPosition = 91
+                fracture.blendMode = .add
+                fracture.glowWidth = 2
+                scene.addChild(fracture)
+                fracture.run(SKAction.sequence([
+                    SKAction.fadeOut(withDuration: 0.15),
+                    SKAction.removeFromParent()
+                ]))
+            }
+
         default:
             // Standard trail particle (fire, ice, shadow)
             let particle = SKSpriteNode(color: color, size: CGSize(width: 4, height: 4))

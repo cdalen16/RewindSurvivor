@@ -340,6 +340,65 @@ class SpriteFactory {
                 for x in 10...21 { px(x, 26, mist) }
                 for x in 12...19 { px(x, 27, mist) }
 
+            case "skin_chrono":
+                // Chrono Shatter — time-fractured crystalline body
+                let shardPurple = SKColor(red: 0.5, green: 0.1, blue: 0.85, alpha: 1)
+                let shardBlue = SKColor(red: 0.1, green: 0.4, blue: 1.0, alpha: 1)
+                let shardPink = SKColor(red: 1.0, green: 0.15, blue: 0.6, alpha: 1)
+                let crackWhite = SKColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 0.95)
+                let crackGlow = SKColor(red: 0.9, green: 0.9, blue: 1.0, alpha: 0.5)
+                let prismatic1 = SKColor(red: 0.3, green: 0.8, blue: 1.0, alpha: 1)
+                let prismatic2 = SKColor(red: 1.0, green: 0.3, blue: 0.8, alpha: 1)
+
+                // Diagonal crack lines across head and body
+                // Main crack: top-left to bottom-right
+                px(12, 4, crackGlow); px(13, 5, crackWhite); px(14, 6, crackWhite)
+                px(15, 7, crackGlow); px(16, 8, crackWhite); px(17, 9, crackWhite)
+                px(18, 10, crackGlow)
+                // Second crack: body
+                px(18, 11, crackWhite); px(17, 12, crackWhite); px(16, 13, crackGlow)
+                px(15, 14, crackWhite); px(14, 15, crackWhite); px(13, 16, crackGlow)
+                px(12, 17, crackWhite); px(11, 18, crackWhite)
+                // Cross crack
+                px(19, 5, crackGlow); px(18, 6, crackWhite); px(17, 7, crackWhite)
+                px(13, 11, crackWhite); px(14, 12, crackGlow); px(15, 13, crackWhite)
+                px(17, 15, crackWhite); px(18, 16, crackGlow); px(19, 17, crackWhite)
+
+                // Color each shard region differently
+                // Upper-left shard: deep purple
+                for y in 4...6 { for x in 12...14 { px(x, y, shardPurple) } }
+                px(11, 5, shardPurple); px(11, 6, shardPurple)
+                // Upper-right shard: electric blue
+                for y in 4...6 { for x in 17...19 { px(x, y, shardBlue) } }
+                px(20, 5, shardBlue); px(20, 6, shardBlue)
+                // Lower-left torso shard: hot pink
+                px(12, 13, shardPink); px(11, 14, shardPink); px(12, 14, shardPink)
+                px(11, 15, shardPink); px(12, 15, shardPink); px(13, 13, shardPink)
+                // Lower-right torso shard: purple
+                px(18, 13, shardPurple); px(19, 14, shardPurple); px(18, 14, shardPurple)
+                px(19, 15, shardPurple); px(18, 15, shardPurple)
+                // Mid body shard: blue
+                px(15, 15, shardBlue); px(16, 15, shardBlue)
+                px(15, 16, shardBlue); px(16, 16, shardBlue)
+
+                // Prismatic visor — alternating colored pixels
+                if facing != .up {
+                    px(12, 7, prismatic1); px(13, 7, prismatic2); px(14, 7, prismatic1)
+                    px(17, 7, prismatic2); px(18, 7, prismatic1); px(19, 7, prismatic2)
+                    // Visor glow
+                    px(12, 8, crackGlow); px(19, 8, crackGlow)
+                }
+
+                // Crystalline shoulder facets with highlights
+                px(9, 11, shardBlue); px(10, 11, shardPink)
+                px(9, 12, shardPink); px(10, 12, crackWhite) // highlight dot
+                px(21, 11, shardPink); px(22, 11, shardBlue)
+                px(21, 12, crackWhite); px(22, 12, shardBlue) // highlight dot
+
+                // Leg shard colors
+                px(12, 20, shardPurple); px(13, 20, shardBlue)
+                px(18, 20, shardPink); px(19, 20, shardPurple)
+
             default:
                 break
             }
@@ -401,6 +460,43 @@ class SpriteFactory {
                 px(15, 0, stalk); px(16, 0, stalk)
                 px(14, 0, bulbGlow); px(17, 0, bulbGlow)
                 px(15, 0, bulb); px(16, 0, bulb)
+            case "hat_phoenix":
+                // Phoenix Crown — dramatic flaming crown
+                let bronze = SKColor(red: 0.72, green: 0.52, blue: 0.2, alpha: 1)
+                let bronzeDark = SKColor(red: 0.55, green: 0.38, blue: 0.12, alpha: 1)
+                let flameOrange = SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1)
+                let flameYellow = SKColor(red: 1.0, green: 0.85, blue: 0.15, alpha: 1)
+                let flameWhite = SKColor(red: 1.0, green: 0.95, blue: 0.8, alpha: 1)
+                let ember = SKColor(red: 1.0, green: 0.7, blue: 0.1, alpha: 0.8)
+                let innerGlow = SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 0.5)
+
+                // Bronze/gold base band
+                for x in 11...20 { px(x, 3, bronze) }
+                for x in 12...19 { px(x, 4, bronzeDark) }
+                px(11, 4, bronzeDark); px(20, 4, bronzeDark)
+
+                // Center flame pillar (tallest — reaches very high)
+                px(15, 3, flameOrange); px(16, 3, flameOrange)
+                px(15, 2, flameOrange); px(16, 2, flameOrange)
+                px(15, 1, flameYellow); px(16, 1, flameYellow)
+                px(15, 0, flameWhite); px(16, 0, flameWhite)
+
+                // Left flame pillar
+                px(12, 3, flameOrange); px(13, 3, flameOrange)
+                px(12, 2, flameYellow); px(13, 2, flameOrange)
+                px(12, 1, flameWhite); px(13, 1, flameYellow)
+
+                // Right flame pillar
+                px(18, 3, flameOrange); px(19, 3, flameOrange)
+                px(18, 2, flameOrange); px(19, 2, flameYellow)
+                px(18, 1, flameYellow); px(19, 1, flameWhite)
+
+                // Scattered ember pixels floating above
+                px(14, 0, ember); px(17, 0, ember)
+                px(11, 1, ember); px(20, 1, ember)
+
+                // Inner fire glow on forehead between flames
+                px(14, 4, innerGlow); px(15, 4, innerGlow); px(16, 4, innerGlow); px(17, 4, innerGlow)
             default:
                 break
             }

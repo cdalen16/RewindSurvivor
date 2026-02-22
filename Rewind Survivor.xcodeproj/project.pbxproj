@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		BDBB7A8F2F47EE120098D32A /* Rewind Survivor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rewind Survivor.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BDBB7CCC2F4A8B510098D32A /* RewindSurvivor.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = RewindSurvivor.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +38,7 @@
 		BDBB7A812F47EE120098D32A = {
 			isa = PBXGroup;
 			children = (
+				BDBB7CCC2F4A8B510098D32A /* RewindSurvivor.storekit */,
 				BDBB7A862F47EE120098D32A /* Rewind Survivor Shared */,
 				BDBB7A912F47EE120098D32A /* Rewind Survivor iOS */,
 				BDBB7A902F47EE120098D32A /* Products */,

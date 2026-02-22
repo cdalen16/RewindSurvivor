@@ -16,6 +16,8 @@ struct CosmeticItem {
     var primaryColor: SKColor?
     var secondaryColor: SKColor?
     var trailColor: SKColor?
+    var isPremium: Bool = false
+    var productID: String? = nil
 }
 
 struct CosmeticCatalog {
@@ -29,6 +31,7 @@ struct CosmeticCatalog {
         CosmeticItem(id: "skin_cyber", category: .skin, displayName: "Neon Cyber", description: "Glowing edge lines", price: 8000, previewColor: SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0), primaryColor: SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 1.0), secondaryColor: SKColor(red: 0.05, green: 0.05, blue: 0.12, alpha: 1.0)),
         CosmeticItem(id: "skin_magma", category: .skin, displayName: "Magma Golem", description: "Molten cracks glow", price: 12000, previewColor: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0), primaryColor: SKColor(red: 1.0, green: 0.4, blue: 0.0, alpha: 1.0), secondaryColor: SKColor(red: 0.2, green: 0.08, blue: 0.02, alpha: 1.0)),
         CosmeticItem(id: "skin_ghost", category: .skin, displayName: "Phantom", description: "Semi-transparent specter", price: 20000, previewColor: SKColor(red: 0.6, green: 0.8, blue: 1.0, alpha: 1.0), primaryColor: SKColor(red: 0.6, green: 0.8, blue: 1.0, alpha: 1.0), secondaryColor: SKColor(red: 0.3, green: 0.4, blue: 0.6, alpha: 1.0)),
+        CosmeticItem(id: "skin_chrono", category: .skin, displayName: "Chrono Shatter", description: "Time-fractured crystal", price: 0, previewColor: SKColor(red: 0.6, green: 0.2, blue: 0.9, alpha: 1.0), primaryColor: SKColor(red: 0.6, green: 0.2, blue: 0.9, alpha: 1.0), secondaryColor: SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1.0), isPremium: true, productID: "com.rewindsurvivor.premium.skin_chrono"),
     ]
 
     static let hats: [CosmeticItem] = [
@@ -40,6 +43,7 @@ struct CosmeticCatalog {
         CosmeticItem(id: "hat_headband", category: .hat, displayName: "Ninja Band", description: "Swift and silent", price: 3500, previewColor: SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)),
         CosmeticItem(id: "hat_tophat", category: .hat, displayName: "Top Hat", description: "Distinguished elegance", price: 8000, previewColor: SKColor(red: 0.15, green: 0.15, blue: 0.2, alpha: 1.0)),
         CosmeticItem(id: "hat_antenna", category: .hat, displayName: "Antenna", description: "Picking up signals", price: 4000, previewColor: SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 1.0)),
+        CosmeticItem(id: "hat_phoenix", category: .hat, displayName: "Phoenix Crown", description: "Flames of rebirth", price: 0, previewColor: SKColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1.0), isPremium: true, productID: "com.rewindsurvivor.premium.hat_phoenix"),
     ]
 
     static let trails: [CosmeticItem] = [
@@ -50,6 +54,7 @@ struct CosmeticCatalog {
         CosmeticItem(id: "trail_rainbow", category: .trail, displayName: "Prismatic", description: "Shifting rainbow colors", price: 10000, previewColor: SKColor(red: 1.0, green: 0.5, blue: 0.8, alpha: 1.0), trailColor: SKColor(red: 1.0, green: 0.0, blue: 0.5, alpha: 1.0)),
         CosmeticItem(id: "trail_spark", category: .trail, displayName: "Spark Trail", description: "Electric discharge", price: 5000, previewColor: SKColor(red: 1.0, green: 1.0, blue: 0.3, alpha: 1.0), trailColor: SKColor(red: 1.0, green: 1.0, blue: 0.3, alpha: 1.0)),
         CosmeticItem(id: "trail_pixel", category: .trail, displayName: "Glitch Trail", description: "Pixelated artifacts", price: 6000, previewColor: SKColor(red: 0.0, green: 1.0, blue: 0.5, alpha: 1.0), trailColor: SKColor(red: 0.0, green: 1.0, blue: 0.5, alpha: 1.0)),
+        CosmeticItem(id: "trail_vortex", category: .trail, displayName: "Temporal Vortex", description: "Spiraling time rifts", price: 0, previewColor: SKColor(red: 0.5, green: 0.0, blue: 0.9, alpha: 1.0), trailColor: SKColor(red: 0.5, green: 0.0, blue: 0.9, alpha: 1.0), isPremium: true, productID: "com.rewindsurvivor.premium.trail_vortex"),
     ]
 
     static func item(byId id: String) -> CosmeticItem? {

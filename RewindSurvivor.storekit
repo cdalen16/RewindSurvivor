@@ -1,0 +1,200 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "F7A1B2C3-D4E5-4F67-8901-ABCDEF123456",
+  "nonRenewableSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0001-4000-A000-000000000001",
+      "localizations" : [
+        {
+          "description" : "500 coins to spend in the shop",
+          "displayName" : "500 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.coins.500",
+      "referenceName" : "500 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0002-4000-A000-000000000002",
+      "localizations" : [
+        {
+          "description" : "1200 coins to spend in the shop",
+          "displayName" : "1,200 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.coins.1200",
+      "referenceName" : "1200 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0003-4000-A000-000000000003",
+      "localizations" : [
+        {
+          "description" : "3500 coins to spend in the shop",
+          "displayName" : "3,500 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.coins.3500",
+      "referenceName" : "3500 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0004-4000-A000-000000000004",
+      "localizations" : [
+        {
+          "description" : "8000 coins to spend in the shop",
+          "displayName" : "8,000 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.coins.8000",
+      "referenceName" : "8000 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "19.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0005-4000-A000-000000000005",
+      "localizations" : [
+        {
+          "description" : "20000 coins to spend in the shop",
+          "displayName" : "20,000 Coins",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.coins.20000",
+      "referenceName" : "20000 Coins",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0006-4000-A000-000000000006",
+      "localizations" : [
+        {
+          "description" : "Time-fractured crystalline armor skin",
+          "displayName" : "Chrono Shatter Skin",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.premium.skin_chrono",
+      "referenceName" : "Chrono Shatter Skin",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0007-4000-A000-000000000007",
+      "localizations" : [
+        {
+          "description" : "Dramatic flaming crown hat",
+          "displayName" : "Phoenix Crown Hat",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.premium.hat_phoenix",
+      "referenceName" : "Phoenix Crown Hat",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "1.99",
+      "familyShareable" : false,
+      "internalID" : "D1A2B3C4-0008-4000-A000-000000000008",
+      "localizations" : [
+        {
+          "description" : "Spiraling temporal vortex trail effect",
+          "displayName" : "Temporal Vortex Trail",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.rewindsurvivor.premium.trail_vortex",
+      "referenceName" : "Temporal Vortex Trail",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : "",
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Message"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

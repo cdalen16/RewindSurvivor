@@ -26,6 +26,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var statsScreen: StatsScreenNode!
     private var shopScreen: ShopScreenNode!
     private var pauseOverlay: PauseOverlayNode!
+    private var coinPurchaseSheet: CoinPurchaseNode!
     private var transitionOverlay: SKSpriteNode!
 
     // MARK: - Arena
@@ -114,6 +115,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Pause overlay
         pauseOverlay = PauseOverlayNode()
         cameraManager.cameraNode.addChild(pauseOverlay)
+
+        // Coin purchase sheet
+        coinPurchaseSheet = CoinPurchaseNode()
+        cameraManager.cameraNode.addChild(coinPurchaseSheet)
 
         // Transition overlay (dip-to-black between screens)
         transitionOverlay = SKSpriteNode(color: .black, size: size)
@@ -552,6 +557,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         hud.hide()
         player.isHidden = true
         SpriteFactory.shared.invalidatePlayerTextures()
+
+        // Start StoreKit
+        StoreManager.shared.startObservingTransactions()
+        Task { await StoreManager.shared.loadProducts(); await StoreManager.shared.checkEntitlements() }
+
         mainMenu.show(screenSize: size,
             onPlay: { [weak self] in
                 guard let self = self else { return }
@@ -587,6 +597,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         }
                     }
                 }
+            },
+            onCoinPurchase: { [weak self] in
+                guard let self = self else { return }
+                self.coinPurchaseSheet.show(screenSize: self.size)
             }
         )
     }
@@ -1407,7 +1421,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         case .mainMenu:
             for touch in touches {
                 let location = touch.location(in: cameraManager.cameraNode)
-                mainMenu.handleTouch(at: location)
+                if !coinPurchaseSheet.isHidden {
+                    coinPurchaseSheet.handleTouch(at: location)
+                } else {
+                    mainMenu.handleTouch(at: location)
+                }
             }
 
         case .playing:

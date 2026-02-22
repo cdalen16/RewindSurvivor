@@ -1,4 +1,5 @@
 import SpriteKit
+import StoreKit
 
 class ShopScreenNode: SKNode {
     private var onBack: (() -> Void)?
@@ -157,8 +158,11 @@ class ShopScreenNode: SKNode {
         crop.addChild(container)
         self.scrollContainer = container
 
-        // Populate items (sorted by price, cheapest first)
-        let items = CosmeticCatalog.items(forCategory: currentCategory).sorted { $0.price < $1.price }
+        // Populate items: non-premium sorted by price first, then premium at end
+        let allItems = CosmeticCatalog.items(forCategory: currentCategory)
+        let nonPremium = allItems.filter { !$0.isPremium }.sorted { $0.price < $1.price }
+        let premium = allItems.filter { $0.isPremium }
+        let items = nonPremium + premium
         let pm = PersistenceManager.shared
         let itemStartY = scrollTopY - cardHeight / 2 - 6
 
@@ -179,10 +183,35 @@ class ShopScreenNode: SKNode {
 
             // Card background
             let cardBg = SKShapeNode(rectOf: CGSize(width: cardWidth, height: cardHeight), cornerRadius: 8)
-            cardBg.fillColor = isEquipped ? ColorPalette.playerPrimary.withAlphaComponent(0.15) : ColorPalette.hudBackground
-            cardBg.strokeColor = isEquipped ? ColorPalette.playerPrimary : ColorPalette.textSecondary.withAlphaComponent(0.3)
-            cardBg.lineWidth = isEquipped ? 2 : 1
+            if item.isPremium {
+                cardBg.fillColor = isEquipped ? ColorPalette.gold.withAlphaComponent(0.12) : SKColor(red: 0.1, green: 0.08, blue: 0.02, alpha: 1)
+                cardBg.strokeColor = ColorPalette.gold
+                cardBg.lineWidth = 2
+                // Pulsing gold border
+                cardBg.run(SKAction.repeatForever(SKAction.sequence([
+                    SKAction.customAction(withDuration: 1.0) { node, elapsed in
+                        let t = CGFloat(elapsed)
+                        (node as? SKShapeNode)?.strokeColor = ColorPalette.gold.withAlphaComponent(0.5 + 0.5 * sin(t * .pi))
+                    },
+                ])))
+            } else {
+                cardBg.fillColor = isEquipped ? ColorPalette.playerPrimary.withAlphaComponent(0.15) : ColorPalette.hudBackground
+                cardBg.strokeColor = isEquipped ? ColorPalette.playerPrimary : ColorPalette.textSecondary.withAlphaComponent(0.3)
+                cardBg.lineWidth = isEquipped ? 2 : 1
+            }
             card.addChild(cardBg)
+
+            // Premium badge
+            if item.isPremium {
+                let badge = SKLabelNode(fontNamed: "Menlo-Bold")
+                badge.text = "\u{2605} PREMIUM"
+                badge.fontSize = 8
+                badge.fontColor = ColorPalette.gold
+                badge.position = CGPoint(x: cardWidth / 2 - 8, y: cardHeight / 2 - 12)
+                badge.verticalAlignmentMode = .center
+                badge.horizontalAlignmentMode = .right
+                card.addChild(badge)
+            }
 
             // Preview sprite
             let previewX: CGFloat = -88
@@ -254,6 +283,13 @@ class ShopScreenNode: SKNode {
             } else if isOwned {
                 statusLabel.text = "TAP TO EQUIP"
                 statusLabel.fontColor = ColorPalette.textPrimary
+            } else if item.isPremium {
+                if let productID = item.productID, let product = StoreManager.shared.product(for: productID) {
+                    statusLabel.text = product.displayPrice
+                } else {
+                    statusLabel.text = "PREMIUM"
+                }
+                statusLabel.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1.0) // cyan
             } else {
                 statusLabel.text = "\(item.price) coins"
                 statusLabel.fontColor = ColorPalette.gold
@@ -438,7 +474,10 @@ class ShopScreenNode: SKNode {
         guard let container = scrollContainer else { return }
         let containerLocal = container.convert(localPoint, from: self)
 
-        let items = CosmeticCatalog.items(forCategory: currentCategory).sorted { $0.price < $1.price }
+        let allItems = CosmeticCatalog.items(forCategory: currentCategory)
+        let nonPremium = allItems.filter { !$0.isPremium }.sorted { $0.price < $1.price }
+        let premiumItems = allItems.filter { $0.isPremium }
+        let items = nonPremium + premiumItems
         let pm = PersistenceManager.shared
         let tabY = screenSize.height * 0.22
         let scrollTopY = tabY - 26
@@ -469,8 +508,9 @@ class ShopScreenNode: SKNode {
                     }
                     SpriteFactory.shared.invalidatePlayerTextures()
                     rebuild()
+                } else if item.isPremium {
+                    showPremiumConfirmation(for: item)
                 } else {
-                    // Show purchase confirmation
                     showConfirmation(for: item)
                 }
                 return
@@ -606,6 +646,118 @@ class ShopScreenNode: SKNode {
         pendingPurchaseItem = nil
     }
 
+    // MARK: - Premium Purchase Confirmation
+
+    private func showPremiumConfirmation(for item: CosmeticItem) {
+        dismissConfirmation()
+        pendingPurchaseItem = item
+
+        let overlay = SKNode()
+        overlay.zPosition = 20
+        overlay.name = "confirmOverlay"
+
+        // Dim background
+        let dim = SKSpriteNode(color: SKColor.black.withAlphaComponent(0.6), size: screenSize)
+        dim.zPosition = 0
+        overlay.addChild(dim)
+
+        // Dialog box
+        let dialogW: CGFloat = 260
+        let dialogH: CGFloat = 170
+        let dialog = SKShapeNode(rectOf: CGSize(width: dialogW, height: dialogH), cornerRadius: 12)
+        dialog.fillColor = SKColor(red: 0.08, green: 0.06, blue: 0.02, alpha: 1)
+        dialog.strokeColor = ColorPalette.gold
+        dialog.lineWidth = 2.5
+        dialog.zPosition = 1
+        overlay.addChild(dialog)
+
+        // Title
+        let titleLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        titleLabel.text = "\u{2605} PREMIUM \u{2605}"
+        titleLabel.fontSize = 18
+        titleLabel.fontColor = ColorPalette.gold
+        titleLabel.position = CGPoint(x: 0, y: 50)
+        titleLabel.zPosition = 2
+        titleLabel.verticalAlignmentMode = .center
+        titleLabel.horizontalAlignmentMode = .center
+        overlay.addChild(titleLabel)
+
+        // Item name
+        let nameLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        nameLabel.text = item.displayName
+        nameLabel.fontSize = 15
+        nameLabel.fontColor = ColorPalette.textPrimary
+        nameLabel.position = CGPoint(x: 0, y: 23)
+        nameLabel.zPosition = 2
+        nameLabel.verticalAlignmentMode = .center
+        nameLabel.horizontalAlignmentMode = .center
+        overlay.addChild(nameLabel)
+
+        // Price from StoreKit
+        let priceLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        if let productID = item.productID, let product = StoreManager.shared.product(for: productID) {
+            priceLabel.text = product.displayPrice
+        } else {
+            priceLabel.text = "PREMIUM"
+        }
+        priceLabel.fontSize = 14
+        priceLabel.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1.0)
+        priceLabel.position = CGPoint(x: 0, y: 0)
+        priceLabel.zPosition = 2
+        priceLabel.verticalAlignmentMode = .center
+        priceLabel.horizontalAlignmentMode = .center
+        overlay.addChild(priceLabel)
+
+        // BUY button
+        let buyBtn = SKNode()
+        buyBtn.name = "confirmBuy"
+        buyBtn.position = CGPoint(x: -60, y: -50)
+        buyBtn.zPosition = 2
+        let buyBg = SKShapeNode(rectOf: CGSize(width: 100, height: 36), cornerRadius: 6)
+        buyBg.fillColor = ColorPalette.gold.withAlphaComponent(0.3)
+        buyBg.strokeColor = ColorPalette.gold
+        buyBg.lineWidth = 2
+        buyBtn.addChild(buyBg)
+        let buyLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        buyLabel.text = "BUY"
+        buyLabel.fontSize = 14
+        buyLabel.fontColor = ColorPalette.gold
+        buyLabel.verticalAlignmentMode = .center
+        buyLabel.horizontalAlignmentMode = .center
+        buyBtn.addChild(buyLabel)
+        overlay.addChild(buyBtn)
+
+        // Cancel button
+        let cancelBtn = SKNode()
+        cancelBtn.name = "confirmCancel"
+        cancelBtn.position = CGPoint(x: 60, y: -50)
+        cancelBtn.zPosition = 2
+        let cancelBg = SKShapeNode(rectOf: CGSize(width: 100, height: 36), cornerRadius: 6)
+        cancelBg.fillColor = ColorPalette.hudBackground
+        cancelBg.strokeColor = ColorPalette.textSecondary
+        cancelBg.lineWidth = 2
+        cancelBtn.addChild(cancelBg)
+        let cancelLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        cancelLabel.text = "CANCEL"
+        cancelLabel.fontSize = 14
+        cancelLabel.fontColor = ColorPalette.textSecondary
+        cancelLabel.verticalAlignmentMode = .center
+        cancelLabel.horizontalAlignmentMode = .center
+        cancelBtn.addChild(cancelLabel)
+        overlay.addChild(cancelBtn)
+
+        // Animate in
+        overlay.alpha = 0
+        overlay.setScale(0.9)
+        overlay.run(SKAction.group([
+            SKAction.fadeIn(withDuration: 0.15),
+            SKAction.scale(to: 1.0, duration: 0.15)
+        ]))
+
+        addChild(overlay)
+        confirmOverlay = overlay
+    }
+
     private func handleConfirmTap(at localPoint: CGPoint) {
         guard let overlay = confirmOverlay else { return }
 
@@ -614,25 +766,47 @@ class ShopScreenNode: SKNode {
             let btnLocal = btn.convert(localPoint, from: self)
             if abs(btnLocal.x) < 55 && abs(btnLocal.y) < 22 {
                 if let item = pendingPurchaseItem {
-                    let pm = PersistenceManager.shared
-                    if pm.spendCoins(item.price) {
-                        pm.unlockCosmetic(item.id)
-                        switch item.category {
-                        case .skin: pm.equipSkin(item.id)
-                        case .hat: pm.equipHat(item.id)
-                        case .trail: pm.equipTrail(item.id)
+                    if item.isPremium {
+                        // Premium: StoreKit purchase
+                        guard let productID = item.productID,
+                              let product = StoreManager.shared.product(for: productID) else {
+                            dismissConfirmation()
+                            return
                         }
-                        SpriteFactory.shared.invalidatePlayerTextures()
-                        dismissConfirmation()
-                        rebuild()
+                        Task { [weak self] in
+                            do {
+                                let success = try await StoreManager.shared.purchase(product)
+                                guard let self = self else { return }
+                                if success {
+                                    self.dismissConfirmation()
+                                    self.rebuild()
+                                }
+                            } catch {
+                                // Purchase failed
+                            }
+                        }
                     } else {
-                        // Shake the dialog
-                        overlay.run(SKAction.sequence([
-                            SKAction.moveBy(x: -5, y: 0, duration: 0.04),
-                            SKAction.moveBy(x: 10, y: 0, duration: 0.04),
-                            SKAction.moveBy(x: -10, y: 0, duration: 0.04),
-                            SKAction.moveBy(x: 5, y: 0, duration: 0.04),
-                        ]))
+                        // Coin purchase
+                        let pm = PersistenceManager.shared
+                        if pm.spendCoins(item.price) {
+                            pm.unlockCosmetic(item.id)
+                            switch item.category {
+                            case .skin: pm.equipSkin(item.id)
+                            case .hat: pm.equipHat(item.id)
+                            case .trail: pm.equipTrail(item.id)
+                            }
+                            SpriteFactory.shared.invalidatePlayerTextures()
+                            dismissConfirmation()
+                            rebuild()
+                        } else {
+                            // Shake the dialog
+                            overlay.run(SKAction.sequence([
+                                SKAction.moveBy(x: -5, y: 0, duration: 0.04),
+                                SKAction.moveBy(x: 10, y: 0, duration: 0.04),
+                                SKAction.moveBy(x: -10, y: 0, duration: 0.04),
+                                SKAction.moveBy(x: 5, y: 0, duration: 0.04),
+                            ]))
+                        }
                     }
                 }
                 return
