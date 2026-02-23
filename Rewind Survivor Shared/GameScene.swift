@@ -68,6 +68,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         physicsWorld.contactDelegate = self
 
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActive), name: UIApplication.willResignActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActive), name: UIApplication.didBecomeActiveNotification, object: nil)
 
         // Preload textures
         SpriteFactory.shared.preloadAllTextures()
@@ -531,6 +532,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         pauseGame()
     }
 
+    @objc private func appDidBecomeActive() {
+        // SpriteKit auto-unpauses the scene when returning to foreground.
+        // Re-pause if we're still in the paused state so enemies don't keep moving.
+        if gameState.gamePhase == .paused {
+            self.isPaused = true
+        }
+    }
+
     private func pauseGame() {
         guard gameState.gamePhase == .playing else { return }
         gameState.gamePhase = .paused
@@ -650,6 +659,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Clean up freeze aura visual
         freezeAuraContainer?.removeFromParent()
         freezeAuraContainer = nil
+
+        // Remove leftover pickups/coins from previous run
+        enumerateChildNodes(withName: "//pickup") { node, _ in node.removeFromParent() }
+        // Remove leftover projectiles
+        enumerateChildNodes(withName: "//projectile") { node, _ in node.removeFromParent() }
 
         player.isHidden = false
         player.resetForNewGame(gameState: gameState)
