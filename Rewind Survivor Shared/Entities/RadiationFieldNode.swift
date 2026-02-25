@@ -114,23 +114,8 @@ class RadiationFieldNode: SKNode {
                 if dist < damageRadius {
                     // More damage closer to center
                     let falloff = 1.0 - (dist / damageRadius) * 0.5
-                    enemy.takeDamage(damagePerTick * falloff)
-
-                    // Small damage spark on enemy
-                    let spark = SKSpriteNode(color: ColorPalette.superRadiationField,
-                                            size: CGSize(width: 4, height: 4))
-                    spark.position = enemy.position
-                    spark.zPosition = 81
-                    spark.blendMode = .add
-                    spark.alpha = 0.6
-                    scene.addChild(spark)
-                    spark.run(SKAction.sequence([
-                        SKAction.group([
-                            SKAction.fadeOut(withDuration: 0.2),
-                            SKAction.scale(to: 2.0, duration: 0.2)
-                        ]),
-                        SKAction.removeFromParent()
-                    ]))
+                    let actualDmg = damagePerTick * falloff
+                    enemy.takeDamage(actualDmg)
                 }
             }
         }

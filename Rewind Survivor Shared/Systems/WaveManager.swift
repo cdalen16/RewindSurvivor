@@ -25,7 +25,7 @@ class WaveManager {
         spawnTimer = 0
 
         // Faster spawning in later waves
-        spawnInterval = max(0.15, 0.5 - Double(wave - 1) * 0.03)
+        spawnInterval = max(0.15, 0.35 - Double(wave - 1) * 0.02)
     }
 
     func update(deltaTime: TimeInterval, scene: SKScene, gameState: GameState, ghostCount: Int, playerPosition: CGPoint) {

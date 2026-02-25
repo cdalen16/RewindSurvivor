@@ -41,7 +41,7 @@ class PowerUpManager {
             gameState.chainLightningBounces += 1
 
         case .lifeSteal:
-            gameState.lifeStealPercent += 0.05
+            gameState.lifeStealPercent += 0.03
 
         case .explosiveRounds:
             gameState.explosionRadius = gameState.explosionRadius == 0 ? 40 : gameState.explosionRadius + 15

@@ -2203,26 +2203,6 @@ class SpriteFactory {
                     px(4, 11, ic); px(4, 12, ic); px(19, 11, ic); px(19, 12, ic)
                     px(11, 4, ic); px(12, 4, ic); px(11, 19, ic); px(12, 19, ic)
 
-                case .elementalStorm:
-                    // Storm with lightning bolt and swirl
-                    // Cloud top
-                    for x in 5...18 { px(x, 5, ic.withAlphaComponent(0.5)); px(x, 6, ic.withAlphaComponent(0.5)) }
-                    for x in 7...16 { px(x, 4, ic.withAlphaComponent(0.3)) }
-                    // Lightning bolt center
-                    px(13, 7, w); px(12, 8, w); px(11, 9, w); px(10, 10, w)
-                    px(10, 11, w); px(11, 11, w); px(12, 11, w); px(13, 11, w)
-                    px(12, 12, w); px(11, 13, w); px(10, 14, w); px(9, 15, w)
-                    // Bolt glow
-                    px(14, 7, ic); px(13, 8, ic); px(12, 9, ic); px(11, 10, ic)
-                    px(13, 12, ic); px(12, 13, ic); px(11, 14, ic); px(10, 15, ic)
-                    // Swirl elements (fire/ice)
-                    let fire = SKColor(red: 1.0, green: 0.3, blue: 0.1, alpha: 0.6)
-                    let iceC = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.6)
-                    px(6, 9, fire); px(7, 10, fire); px(6, 14, fire); px(7, 15, fire)
-                    px(16, 9, iceC); px(17, 10, iceC); px(16, 14, iceC); px(17, 15, iceC)
-                    // Bottom sparks
-                    px(8, 17, w); px(14, 17, w); px(11, 18, w)
-
                 case .voidBarrier:
                     // Shield ring
                     for x in 6...17 { px(x, 5, ic); px(x, 18, ic) }

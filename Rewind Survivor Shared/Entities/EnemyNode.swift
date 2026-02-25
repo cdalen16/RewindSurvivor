@@ -21,6 +21,10 @@ class EnemyNode: SKSpriteNode {
     private(set) var isChronoSlowed: Bool = false
     private var chronoSlowMultiplier: CGFloat = 1.0
 
+    // Knockback
+    private var knockbackVelocity: CGVector = .zero
+    private var knockbackTimer: TimeInterval = 0
+
     // Stuck detection
     private var lastPosition: CGPoint = .zero
     private var stuckTimer: TimeInterval = 0
@@ -86,6 +90,9 @@ class EnemyNode: SKSpriteNode {
         body.linearDamping = 0
         body.friction = 0
         self.physicsBody = body
+        // Speed jitter: ±15% so same-type enemies don't form packs
+        let jitter = CGFloat.random(in: 0.85...1.15)
+        self.moveSpeed *= jitter
         self.baseSpeed = self.moveSpeed
 
         // Create dynamic shield visual for Shield Bearer
@@ -142,11 +149,28 @@ class EnemyNode: SKSpriteNode {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func applyKnockback(velocity: CGVector, duration: TimeInterval) {
+        knockbackVelocity = velocity
+        knockbackTimer = duration
+    }
+
     func update(deltaTime: TimeInterval, targets: [SKNode]) {
         guard !isFrozen else {
             physicsBody?.velocity = .zero
             return
         }
+
+        // Knockback overrides pathfinding
+        if knockbackTimer > 0 {
+            knockbackTimer -= deltaTime
+            let decay = CGFloat(max(0, knockbackTimer / 0.4))
+            physicsBody?.velocity = CGVector(dx: knockbackVelocity.dx * decay, dy: knockbackVelocity.dy * decay)
+            if knockbackTimer <= 0 {
+                knockbackVelocity = .zero
+            }
+            return
+        }
+
         guard let nearest = findNearestTarget(targets) else {
             physicsBody?.velocity = .zero
             return
@@ -197,24 +221,25 @@ class EnemyNode: SKSpriteNode {
             behaviorTimer += deltaTime
             switch chargeState {
             case .approaching:
-                if dist < 200 {
+                if dist < 350 {
                     chargeState = .telegraphing
                     behaviorTimer = 0
+                    // Lock onto real target direction at charge start
                     chargeDirection = toTarget.normalized()
                     physicsBody?.velocity = .zero
                     let flash = SKAction.sequence([
-                        SKAction.colorize(with: .white, colorBlendFactor: 0.8, duration: 0.1),
-                        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.1)
+                        SKAction.colorize(with: .white, colorBlendFactor: 0.8, duration: 0.08),
+                        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.08)
                     ])
-                    run(SKAction.repeat(flash, count: 3), withKey: "telegraph")
+                    run(SKAction.repeat(flash, count: 2), withKey: "telegraph")
                 } else {
                     let dir = avoidObstacles(desiredDirection: toTarget.normalized())
-                    physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed * 0.6, dy: dir.dy * moveSpeed * 0.6)
+                    physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
                 }
 
             case .telegraphing:
                 physicsBody?.velocity = .zero
-                if behaviorTimer >= 0.6 {
+                if behaviorTimer >= 0.35 {
                     chargeState = .charging
                     behaviorTimer = 0
                     removeAction(forKey: "telegraph")
@@ -223,17 +248,19 @@ class EnemyNode: SKSpriteNode {
             case .charging:
                 if let dir = chargeDirection {
                     // No obstacle avoidance during charge — physics handles wall collision
-                    physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed * 4.0, dy: dir.dy * moveSpeed * 4.0)
+                    physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed * 5.0, dy: dir.dy * moveSpeed * 5.0)
                 }
-                if behaviorTimer >= 0.4 {
+                if behaviorTimer >= 0.5 {
                     chargeState = .cooldown
                     behaviorTimer = 0
                     physicsBody?.velocity = .zero
                 }
 
             case .cooldown:
-                physicsBody?.velocity = .zero
-                if behaviorTimer >= 1.0 {
+                // Drift slowly toward target during cooldown instead of standing still
+                let dir = avoidObstacles(desiredDirection: toTarget.normalized())
+                physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed * 0.4, dy: dir.dy * moveSpeed * 0.4)
+                if behaviorTimer >= 0.5 {
                     chargeState = .approaching
                     behaviorTimer = 0
                 }
@@ -317,7 +344,7 @@ class EnemyNode: SKSpriteNode {
                     groundPoundTimer = 0
                     removeAction(forKey: "groundPoundTelegraph")
                     removeAction(forKey: "groundPoundGrow")
-                    // Lunge toward player before slamming
+                    // Lunge toward real player position before slamming
                     let lungeDir = toTarget.normalized()
                     let lungeDist = min(dist, 60.0)
                     let lungeMove = SKAction.move(by: CGVector(dx: lungeDir.dx * lungeDist, dy: lungeDir.dy * lungeDist), duration: 0.08)
@@ -391,7 +418,7 @@ class EnemyNode: SKSpriteNode {
             let dir = avoidObstacles(desiredDirection: toTarget.normalized())
             physicsBody?.velocity = CGVector(dx: dir.dx * moveSpeed, dy: dir.dy * moveSpeed)
 
-            // Shield turns toward target with limited turn speed (player can outmaneuver)
+            // Shield turns toward real target with limited turn speed (player can outmaneuver)
             let targetAngle = atan2(toTarget.dy, toTarget.dx)
             var angleDiff = targetAngle - shieldAngle
             // Normalize to [-pi, pi]
@@ -446,31 +473,36 @@ class EnemyNode: SKSpriteNode {
     private func avoidObstacles(desiredDirection: CGVector) -> CGVector {
         guard let scene = self.scene else { return desiredDirection }
 
-        let lookAhead = CGFloat(enemyType.spriteSize) * 1.5
-        let angles: [CGFloat] = [0, .pi / 6, -.pi / 6]
-        var centerBlocked = false
-        var bestDir = desiredDirection
+        let lookAhead = CGFloat(enemyType.spriteSize) * 3.0
+        // Sweep 9 rays: 0°, ±22.5°, ±45°, ±67.5°, ±90°
+        let angles: [CGFloat] = [0, .pi/8, -.pi/8, .pi/4, -.pi/4, 3 * .pi/8, -3 * .pi/8, .pi/2, -.pi/2]
+        var blocked = Set<Int>()
 
-        for angle in angles {
+        for (i, angle) in angles.enumerated() {
             let rayDir = desiredDirection.rotated(by: angle)
             let rayEnd = CGPoint(
                 x: position.x + rayDir.dx * lookAhead,
                 y: position.y + rayDir.dy * lookAhead
             )
-
             if let hit = scene.physicsWorld.body(alongRayStart: position, end: rayEnd),
                hit.categoryBitMask == PhysicsCategory.wall,
                hit.isDynamic == false {
-                if angle == 0 {
-                    centerBlocked = true
-                }
-            } else if angle != 0 && centerBlocked {
-                bestDir = desiredDirection.rotated(by: angle * 2.5)
-                break
+                blocked.insert(i)
             }
         }
 
-        return bestDir.normalized()
+        // Center ray clear — go straight
+        if !blocked.contains(0) { return desiredDirection }
+
+        // Center blocked — find best clear ray (prefer smallest angle deviation)
+        for (i, angle) in angles.enumerated() where i > 0 {
+            if !blocked.contains(i) {
+                return desiredDirection.rotated(by: angle * 1.5).normalized()
+            }
+        }
+
+        // All rays blocked — slide perpendicular to desired direction
+        return CGVector(dx: -desiredDirection.dy, dy: desiredDirection.dx).normalized()
     }
 
     // MARK: - Slow/Freeze Aura Support
@@ -493,7 +525,7 @@ class EnemyNode: SKSpriteNode {
 
     func applyChronoSlow() {
         isChronoSlowed = true
-        chronoSlowMultiplier = 0.4
+        chronoSlowMultiplier = 0.75
         moveSpeed = baseSpeed * chronoSlowMultiplier
         if !isSlowed {
             colorBlendFactor = 0.4

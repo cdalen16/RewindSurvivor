@@ -5,7 +5,6 @@ class SuperPowerUpManager {
     private var chronoShiftActive: Bool = false
     private var radiationFieldNode: RadiationFieldNode?
     private var shockwavePulseNode: ShockwavePulseNode?
-    private var elementalStormNode: ElementalStormNode?
     private var voidBarrierNode: VoidBarrierNode?
 
     /// Whether to show super selection after this wave
@@ -43,9 +42,6 @@ class SuperPowerUpManager {
         case .shockwavePulse:
             applyShockwavePulse(scene: scene, player: player)
 
-        case .elementalStorm:
-            applyElementalStorm(scene: scene, player: player)
-
         case .voidBarrier:
             applyVoidBarrier(scene: scene, player: player)
         }
@@ -70,13 +66,6 @@ class SuperPowerUpManager {
         pulse.position = player.position
         scene.addChild(pulse)
         shockwavePulseNode = pulse
-    }
-
-    private func applyElementalStorm(scene: SKScene, player: PlayerNode) {
-        let storm = ElementalStormNode()
-        storm.position = player.position
-        scene.addChild(storm)
-        elementalStormNode = storm
     }
 
     private func applyVoidBarrier(scene: SKScene, player: PlayerNode) {
@@ -119,16 +108,6 @@ class SuperPowerUpManager {
             }
         }
 
-        // Elemental Storm
-        if let storm = elementalStormNode {
-            if storm.parent == nil {
-                elementalStormNode = nil
-            } else {
-                storm.update(deltaTime: deltaTime, playerPosition: player.position,
-                           enemies: enemies, scene: scene)
-            }
-        }
-
         // Void Barrier
         if let barrier = voidBarrierNode {
             if barrier.parent == nil {
@@ -148,8 +127,6 @@ class SuperPowerUpManager {
         radiationFieldNode = nil
         shockwavePulseNode?.removeFromParent()
         shockwavePulseNode = nil
-        elementalStormNode?.removeFromParent()
-        elementalStormNode = nil
         voidBarrierNode?.removeFromParent()
         voidBarrierNode = nil
     }
@@ -177,11 +154,6 @@ class SuperPowerUpManager {
                 pulse.position = player.position
                 scene.addChild(pulse)
                 shockwavePulseNode = pulse
-            case .elementalStorm:
-                let storm = ElementalStormNode()
-                storm.position = player.position
-                scene.addChild(storm)
-                elementalStormNode = storm
             case .voidBarrier:
                 let barrier = VoidBarrierNode(duration: SuperPowerUpType.voidBarrier.duration)
                 barrier.position = player.position

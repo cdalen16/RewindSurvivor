@@ -4,7 +4,7 @@ class GhostPlaybackController {
     private(set) var activeGhosts: [GhostNode] = []
 
     /// Max ghosts in the orbit ring before upgrades kick in
-    static let maxOrbitGhosts = 8
+    static let maxOrbitGhosts = 6
 
     func spawnGhost(from recording: GhostRecording, scene: SKScene) {
         guard !recording.snapshots.isEmpty else { return }
@@ -47,6 +47,11 @@ class GhostPlaybackController {
 
     var ghostTargetNodes: [SKNode] {
         return activeGhosts.map { $0 as SKNode }
+    }
+
+    /// Weighted ghost count: sum of all ghost levels (level 2 = 2 ghosts for scaling)
+    var weightedGhostCount: Int {
+        return activeGhosts.reduce(0) { $0 + $1.ghostLevel }
     }
 
     // MARK: - Effects

@@ -416,16 +416,18 @@ class TutorialNode: SKNode {
                 arrow.verticalAlignmentMode = .center
                 parent.addChild(arrow)
 
-                // Super power-up icons
-                let supers: [SuperPowerUpType] = [.chronoShift, .radiationField, .shockwavePulse]
+                // Super power-up icons (all 4)
+                let supers: [SuperPowerUpType] = [.chronoShift, .radiationField, .shockwavePulse, .voidBarrier]
+                let superSpacing: CGFloat = 38
+                let superStartX = -CGFloat(supers.count - 1) * superSpacing / 2
                 for (i, superType) in supers.enumerated() {
-                    let x = CGFloat(i - 1) * 45 - 15
+                    let x = superStartX + CGFloat(i) * superSpacing
                     let icon = SKSpriteNode(texture: SpriteFactory.shared.superPowerUpIconTexture(type: superType))
-                    icon.size = CGSize(width: 24, height: 24)
+                    icon.size = CGSize(width: 22, height: 22)
                     icon.position = CGPoint(x: x, y: -20)
                     parent.addChild(icon)
 
-                    let border = SKShapeNode(rectOf: CGSize(width: 30, height: 30), cornerRadius: 4)
+                    let border = SKShapeNode(rectOf: CGSize(width: 28, height: 28), cornerRadius: 4)
                     border.fillColor = ColorPalette.hudBackground
                     border.strokeColor = superType.iconColor.withAlphaComponent(0.6)
                     border.lineWidth = 1
@@ -451,8 +453,8 @@ class TutorialNode: SKNode {
                 "After wave 15, you can SPEND deaths",
                 "on powerful super abilities!",
                 "",
-                "Chrono Shift, Quantum Nuke, Shadow",
-                "Clone, Gravity Well & Void Barrier.",
+                "Chrono Shift, Radiation Field,",
+                "Shockwave Pulse & Void Barrier.",
                 "Choose wisely — deaths are precious!"
             ])
 

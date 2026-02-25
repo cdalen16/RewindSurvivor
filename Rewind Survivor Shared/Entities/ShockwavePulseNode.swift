@@ -178,12 +178,10 @@ class ShockwavePulseNode: SKNode {
                 let dirX = dx / dist
                 let dirY = dy / dist
                 let force = pushForce * falloff
-                if let body = enemy.physicsBody {
-                    body.velocity = CGVector(
-                        dx: body.velocity.dx + dirX * force,
-                        dy: body.velocity.dy + dirY * force
-                    )
-                }
+                enemy.applyKnockback(
+                    velocity: CGVector(dx: dirX * force, dy: dirY * force),
+                    duration: 0.4
+                )
             }
         }
     }

@@ -144,23 +144,43 @@ struct EnemyType {
 
     // MARK: - Scaling
 
-    static func scaledStats(type: EnemyType, wave: Int, ghostCount: Int) -> (hp: CGFloat, speed: CGFloat, damage: CGFloat) {
-        let waveMultiplier = pow(GameConfig.enemyHPScalePerWave, Double(wave - 1))
-        let ghostHPMultiplier = 1.0 + GameConfig.enemyHPScalePerGhost * CGFloat(ghostCount)
-        let ghostDmgMultiplier = 1.0 + GameConfig.enemyDamageScalePerGhost * CGFloat(ghostCount)
-        let speedScale = min(1.0 + GameConfig.enemySpeedScalePerWave * CGFloat(wave - 1), GameConfig.enemyMaxSpeedMultiplier)
+    /// Raw enemy count before cap (power curve: base × wave^power)
+    private static func rawEnemyCount(forWave wave: Int) -> Double {
+        let base = Double(GameConfig.baseEnemiesPerWave)
+        return base * pow(Double(wave), GameConfig.enemyCountPower)
+    }
 
-        let hp = type.baseHP * CGFloat(waveMultiplier) * ghostHPMultiplier
-        let speed = type.baseSpeed * speedScale
-        let damage = type.baseDamage * CGFloat(waveMultiplier) * ghostDmgMultiplier
+    /// How much the raw enemy count exceeds the cap (1.0 = no overflow)
+    static func overflowMultiplier(forWave wave: Int) -> CGFloat {
+        let rawCount = rawEnemyCount(forWave: wave)
+        let cap = Double(GameConfig.maxEnemiesPerWave)
+        if rawCount <= cap { return 1.0 }
+        return CGFloat(rawCount / cap)
+    }
+
+    static func scaledStats(type: EnemyType, wave: Int, ghostCount: Int) -> (hp: CGFloat, speed: CGFloat, damage: CGFloat) {
+        // Wave scaling: linear with caps (except HP which is uncapped)
+        let waveHPMult = 1.0 + Double(wave - 1) * GameConfig.enemyHPPerWave
+        let waveDmgMult = min(GameConfig.enemyDamageMaxMultiplier, 1.0 + Double(wave - 1) * GameConfig.enemyDamagePerWave)
+        let waveSpdMult = min(GameConfig.enemySpeedMaxWaveMultiplier, 1.0 + Double(wave - 1) * GameConfig.enemySpeedPerWave)
+
+        // Ghost/death scaling: additive on top of wave, uncapped — dying is punishing
+        let ghostHPBonus = Double(GameConfig.enemyHPScalePerGhost) * Double(ghostCount)
+        let ghostDmgBonus = Double(GameConfig.enemyDamageScalePerGhost) * Double(ghostCount)
+        let ghostSpdBonus = Double(GameConfig.enemySpeedScalePerGhost) * Double(ghostCount)
+
+        // Overflow: once enemy count hits cap, excess converts to HP + damage
+        let overflow = overflowMultiplier(forWave: wave)
+
+        let hp = type.baseHP * CGFloat(waveHPMult + ghostHPBonus) * overflow
+        let speed = type.baseSpeed * CGFloat(waveSpdMult + ghostSpdBonus)  // wave capped, ghost uncapped
+        let damage = type.baseDamage * CGFloat(waveDmgMult + ghostDmgBonus) * overflow
 
         return (hp, speed, damage)
     }
 
     static func enemyCount(forWave wave: Int) -> Int {
-        let base = Double(GameConfig.baseEnemiesPerWave)
-        let count = base * pow(GameConfig.enemiesPerWaveGrowth, Double(wave - 1))
-        return min(Int(count), GameConfig.maxEnemiesPerWave)
+        return min(Int(rawEnemyCount(forWave: wave)), GameConfig.maxEnemiesPerWave)
     }
 
     static func composition(forWave wave: Int) -> [(EnemyType, Int)] {

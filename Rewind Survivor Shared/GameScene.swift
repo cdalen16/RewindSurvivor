@@ -393,7 +393,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let pos = CGPoint(x: cx, y: cy)
             guard tryPlace(at: pos) else { continue }
 
-            let crateCount = 1 + Int(drand48() * 2.5) // 1-3 crates
+            let crateCount = 1 + Int(drand48() * 2.0) // 1-2 crates (no L-shapes)
             for i in 0..<crateCount {
                 let variant = Int(drand48() * 3)
                 let tex = SpriteFactory.shared.crateTexture(variant: variant)
@@ -687,7 +687,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             wave: gameState.currentWave,
             scene: self,
             gameState: gameState,
-            ghostCount: ghostPlayback.activeGhosts.count
+            ghostCount: ghostPlayback.weightedGhostCount
         )
 
         if let cam = camera {
@@ -835,7 +835,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         player.position = .zero
         player.maxHP = GameConfig.playerBaseHP + gameState.playerHPBonus
         player.hp = player.maxHP
-        player.applyInvincibility()
+        player.applyInvincibility(duration: 3.0)
 
         // Reset recorder
         ghostRecorder.reset()
@@ -1090,7 +1090,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             at: position,
             scene: self,
             wave: gameState.currentWave,
-            ghostCount: ghostPlayback.activeGhosts.count
+            ghostCount: ghostPlayback.weightedGhostCount
         )
     }
 
@@ -1100,7 +1100,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         guard enemy.behavior == .splitter && enemy.canSplit else { return }
         let nextGen = enemy.splitGeneration + 1
         let wave = gameState.currentWave
-        let ghostCount = ghostPlayback.activeGhosts.count
+        let ghostCount = ghostPlayback.weightedGhostCount
         // Each generation is smaller and weaker (spawned at lower effective wave)
         let effectiveWave = max(1, wave - nextGen * 2)
         let scaleFactor = pow(0.7, CGFloat(nextGen))
@@ -1195,11 +1195,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             handleSplitterDeath(kill.enemy)
             kill.enemy.die(scene: self)
             waveManager.enemyDied(kill.enemy)
-            effectsManager.spawnScoreNumber(at: kill.position, score: kill.enemy.pointValue)
             effectsManager.shakeLight()
-        }
-        for (hitPos, damage) in combatSystem.pendingOrbitalHits {
-            effectsManager.spawnDamageNumber(at: hitPos, text: "\(Int(damage))", color: ColorPalette.playerPrimary)
         }
 
         // Enemies
@@ -1220,7 +1216,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             deltaTime: dt,
             scene: self,
             gameState: gameState,
-            ghostCount: ghostPlayback.activeGhosts.count,
+            ghostCount: ghostPlayback.weightedGhostCount,
             playerPosition: player.position
         )
 
@@ -1229,6 +1225,18 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             deltaTime: dt, scene: self, enemies: waveManager.activeEnemies,
             player: player, gameState: gameState, combatSystem: combatSystem
         )
+
+        // Clean up enemies killed by AoE effects (radiation, elemental storm, etc.)
+        for enemy in waveManager.activeEnemies {
+            if enemy.hp <= 0 && enemy.parent != nil {
+                gameState.score += enemy.pointValue
+                gameState.killsThisRun += 1
+                spawnCoinPickups(at: enemy.position, value: enemy.pointValue)
+                handleSplitterDeath(enemy)
+                enemy.die(scene: self)
+                waveManager.enemyDied(enemy)
+            }
+        }
 
         // Camera
         cameraManager.update(target: player.position, deltaTime: dt, sceneSize: size)
@@ -1241,7 +1249,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             gameState: gameState,
             playerHP: player.hp,
             playerMaxHP: player.maxHP,
-            ghostCount: ghostPlayback.activeGhosts.count,
+            ghostCount: ghostPlayback.weightedGhostCount,
             enemiesRemaining: waveManager.enemiesRemaining
         )
 
@@ -1499,12 +1507,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             handleSplitterDeath(enemy)
             enemy.die(scene: self)
             waveManager.enemyDied(enemy)
-            effectsManager.spawnScoreNumber(at: enemy.position, score: points)
             effectsManager.shakeLight()
-        } else {
-            let dmgColor: SKColor = projectile.isCrit ? ColorPalette.gold : .white
-            let dmgText = projectile.isCrit ? "\(Int(damage))!" : "\(Int(damage))"
-            effectsManager.spawnDamageNumber(at: enemy.position, text: dmgText, color: dmgColor)
         }
 
         // Chain lightning
@@ -1517,7 +1520,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let explosionDmg = damage * 0.5
             let hitPos = enemy.position
             for other in waveManager.activeEnemies {
-                guard other !== enemy, other.parent != nil, other.hp > 0 else { continue }
+                guard other.parent != nil, other.hp > 0 else { continue }
                 let dx = other.position.x - hitPos.x
                 let dy = other.position.y - hitPos.y
                 if sqrt(dx * dx + dy * dy) < gameState.explosionRadius {
@@ -1529,7 +1532,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                         handleSplitterDeath(other)
                         other.die(scene: self)
                         waveManager.enemyDied(other)
-                        effectsManager.spawnScoreNumber(at: other.position, score: other.pointValue)
                     }
                 }
             }
@@ -1570,31 +1572,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 SKAction.removeFromParent()
             ]))
 
-            // Layer 3: Shockwave ring
-            let shockwave = SKShapeNode(circleOfRadius: expRadius * 0.2)
-            shockwave.fillColor = .clear
-            shockwave.strokeColor = SKColor(red: 1.0, green: 0.7, blue: 0.3, alpha: 0.8)
-            shockwave.lineWidth = 2.5
-            shockwave.position = hitPos
-            shockwave.zPosition = 86
-            shockwave.blendMode = .add
-            addChild(shockwave)
-            shockwave.run(SKAction.sequence([
-                SKAction.group([
-                    SKAction.scale(to: expRadius / (expRadius * 0.2), duration: 0.25),
-                    SKAction.fadeOut(withDuration: 0.25)
-                ]),
-                SKAction.removeFromParent()
-            ]))
-
-            // Layer 4: Debris particles
+            // Layer 3: Debris particles
             let debrisColors: [SKColor] = [
                 SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1),
                 SKColor(red: 1.0, green: 0.8, blue: 0.2, alpha: 1),
                 SKColor(red: 1.0, green: 0.2, blue: 0.0, alpha: 1),
                 SKColor(red: 1.0, green: 0.95, blue: 0.6, alpha: 1)
             ]
-            for _ in 0..<12 {
+            for _ in 0..<6 {
                 let angle = CGFloat.random(in: 0...(2 * .pi))
                 let speed = CGFloat.random(in: 80...180)
                 let particleSize = CGFloat.random(in: 2...5)
@@ -1662,10 +1647,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             handleSplitterDeath(target)
             target.die(scene: self)
             waveManager.enemyDied(target)
-            effectsManager.spawnScoreNumber(at: target.position, score: target.pointValue)
-        } else {
-            // Show damage number so chain lightning feels impactful
-            effectsManager.spawnDamageNumber(at: target.position, text: "\(Int(damage))", color: ColorPalette.powerUpCyan)
         }
 
         var newHitSet = hitEnemies
@@ -1676,14 +1657,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Coin Pickups
 
     private func spawnCoinPickups(at position: CGPoint, value: Int) {
-        let coinCount = max(1, value / 10)
-        // Cap at 5 coins per kill to avoid clutter
-        let count = min(coinCount, 5)
-        let valuePerCoin = max(1, coinCount / count)
-        for _ in 0..<count {
-            let pickup = PickupNode(value: valuePerCoin, position: position)
-            addChild(pickup)
-        }
+        // Single coin per kill for performance
+        let coinValue = max(1, value / 10)
+        let pickup = PickupNode(value: coinValue, position: position)
+        addChild(pickup)
     }
 
     private func handlePickupCollected(pickup: PickupNode?) {
@@ -1701,11 +1678,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let dist = sqrt(dx * dx + dy * dy)
 
             if dist < magnetRange && dist > 1 {
-                // Attract toward player
-                let speed: CGFloat = 300 + (magnetRange - dist) * 3
+                // Attract toward player via position lerp (no physics needed)
+                let speed: CGFloat = (300 + (magnetRange - dist) * 3) * CGFloat(dt)
                 let dirX = dx / dist
                 let dirY = dy / dist
-                pickup.physicsBody?.velocity = CGVector(dx: dirX * speed, dy: dirY * speed)
+                pickup.position = CGPoint(
+                    x: pickup.position.x + dirX * speed,
+                    y: pickup.position.y + dirY * speed
+                )
             }
 
             // Auto-collect when very close
@@ -1734,9 +1714,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 handleSplitterDeath(enemy)
                 enemy.die(scene: self)
                 waveManager.enemyDied(enemy)
-                effectsManager.spawnScoreNumber(at: enemy.position, score: enemy.pointValue)
-            } else {
-                effectsManager.spawnDamageNumber(at: enemy.position, text: "\(Int(gameState.thornsDamage))", color: ColorPalette.powerUpPurple)
             }
 
             // Visual thorns burst on the enemy
