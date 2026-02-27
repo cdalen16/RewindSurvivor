@@ -526,7 +526,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
 
     @objc private func appWillResignActive() {
-        if gameState.gamePhase == .playing {
+        let savablePhases: [GamePhase] = [.playing, .powerUpSelect, .superPowerUpSelect, .waveComplete]
+        if savablePhases.contains(where: { $0 == gameState.gamePhase }) {
             saveCurrentRun()
         }
         pauseGame()
@@ -1198,11 +1199,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             effectsManager.shakeLight()
         }
 
-        // Enemies
-        var targets: [SKNode] = [player]
-        targets.append(contentsOf: ghostPlayback.ghostTargetNodes)
+        // Enemies — always target the player (not ghosts, which orbit and cause circling)
         for enemy in waveManager.activeEnemies {
-            enemy.update(deltaTime: dt, targets: targets)
+            enemy.update(deltaTime: dt, targets: [player])
         }
 
         // Catch death from non-contact damage (e.g. bomber explosion)

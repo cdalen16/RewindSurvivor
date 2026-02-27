@@ -64,11 +64,11 @@ class GhostNode: SKSpriteNode {
         label.isHidden = true
         addChild(label)
 
-        // Physics (ghosts don't collide with anything, just visual)
+        // Minimal physics — only collides with walls/obstacles, invisible to enemies
         let body = SKPhysicsBody(circleOfRadius: 12)
         body.categoryBitMask = PhysicsCategory.ghost
         body.contactTestBitMask = PhysicsCategory.none
-        body.collisionBitMask = PhysicsCategory.none
+        body.collisionBitMask = PhysicsCategory.wall
         body.allowsRotation = false
         body.affectedByGravity = false
         self.physicsBody = body
