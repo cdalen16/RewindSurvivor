@@ -1266,9 +1266,6 @@ class SpriteFactory {
             let armorLight = SKColor(red: 0.75, green: 0.82, blue: 0.92, alpha: 1)
             let outline = SKColor(red: 0.2, green: 0.25, blue: 0.35, alpha: 1)
             let eyes = SKColor(red: 1.0, green: 0.3, blue: 0.2, alpha: 1)
-            let shieldEdge = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1)
-            let shieldFill = SKColor(red: 0.3, green: 0.5, blue: 0.9, alpha: 0.7)
-            let shieldGlow = SKColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 0.5)
             let visor = SKColor(red: 0.2, green: 0.2, blue: 0.3, alpha: 1)
 
             let walk = frame == 1
@@ -1310,7 +1307,6 @@ class SpriteFactory {
             px(9, 10, outline); px(27, 10, outline)
 
             // --- Arms ---
-            let leftArmY = walk ? 13 : 15   // Contralateral arm swing
             let rightArmY = walk ? 15 : 13
 
             // Left arm (shield arm — holds steady, slightly forward)

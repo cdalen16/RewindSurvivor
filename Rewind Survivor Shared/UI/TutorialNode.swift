@@ -76,15 +76,6 @@ class TutorialNode: SKNode {
     private enum SlideDirection { case left, right }
 
     private func buildPageAnimated(direction: SlideDirection) {
-        let slideOut = direction == .left ? -screenSize.width * 0.3 : screenSize.width * 0.3
-        let slideIn = -slideOut
-
-        // Fade out current content
-        let snapshot = SKNode()
-        for child in children {
-            // Skip — we'll rebuild everything
-        }
-
         // Quick fade transition
         let overlay = SKSpriteNode(color: .black, size: screenSize)
         overlay.alpha = 0
