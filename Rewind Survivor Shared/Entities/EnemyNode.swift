@@ -754,7 +754,7 @@ class EnemyNode: SKSpriteNode {
     private func groundPound() {
         guard let scene = self.scene else { return }
 
-        let radius: CGFloat = 120
+        let radius: CGFloat = 100
         // Damage player if in range
         scene.enumerateChildNodes(withName: "player") { node, _ in
             let dx = node.position.x - self.position.x

@@ -172,6 +172,7 @@ class WaveManager {
     func spawnMinion(at position: CGPoint, scene: SKScene, wave: Int, ghostCount: Int) {
         let minion = EnemyNode(type: .shambler, wave: max(1, wave - 2), ghostCount: ghostCount)
         minion.position = position
+        minion.contactDamage *= 0.5 // Minions deal half damage
         minion.setScale(0.7) // Minions are smaller
         // Recreate physics body to match scaled size (setScale doesn't affect physics)
         let scaledRadius = CGFloat(EnemyType.shambler.spriteSize) * 0.4 * 0.7

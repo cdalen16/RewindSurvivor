@@ -348,7 +348,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let body = SKPhysicsBody(rectangleOf: size)
             body.isDynamic = false
             body.categoryBitMask = PhysicsCategory.wall
-            body.collisionBitMask = PhysicsCategory.player | PhysicsCategory.enemy | PhysicsCategory.ghost
+            body.collisionBitMask = PhysicsCategory.player | PhysicsCategory.enemy
             body.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.enemyBullet
             node.physicsBody = body
         }
@@ -357,7 +357,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let body = SKPhysicsBody(circleOfRadius: radius)
             body.isDynamic = false
             body.categoryBitMask = PhysicsCategory.wall
-            body.collisionBitMask = PhysicsCategory.player | PhysicsCategory.enemy | PhysicsCategory.ghost
+            body.collisionBitMask = PhysicsCategory.player | PhysicsCategory.enemy
             body.contactTestBitMask = PhysicsCategory.playerBullet | PhysicsCategory.ghostBullet | PhysicsCategory.enemyBullet
             node.physicsBody = body
         }

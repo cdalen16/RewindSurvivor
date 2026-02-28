@@ -65,13 +65,8 @@ class GhostNode: SKSpriteNode {
         addChild(label)
 
         // Minimal physics — only collides with walls/obstacles, invisible to enemies
-        let body = SKPhysicsBody(circleOfRadius: 12)
-        body.categoryBitMask = PhysicsCategory.ghost
-        body.contactTestBitMask = PhysicsCategory.none
-        body.collisionBitMask = PhysicsCategory.wall
-        body.allowsRotation = false
-        body.affectedByGravity = false
-        self.physicsBody = body
+        // No physics body — ghosts pass through everything.
+        // Obstacle overlap is handled manually in update() via pushOutOfObstacles().
 
         // Set initial position
         if let first = recording.snapshots.first {

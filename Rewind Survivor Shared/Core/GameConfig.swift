@@ -36,15 +36,15 @@ struct GameConfig {
 
     // MARK: - Waves (enemy count)
     static let baseEnemiesPerWave: Int = 12
-    static let enemyCountPower: Double = 0.95      // power curve: base * wave^power, reaches ~500 at wave 50
-    static let maxEnemiesPerWave: Int = 500
+    static let enemyCountPower: Double = 0.90       // power curve: base * wave^power, caps at wave 30
+    static let maxEnemiesPerWave: Int = 250
 
-    // MARK: - Wave Scaling (all linear with caps — no level should feel impossible)
-    static let enemyDamagePerWave: Double = 0.10    // +10% per wave, cap at 6x
-    static let enemyDamageMaxMultiplier: Double = 6.0
-    static let enemyHPPerWave: Double = 0.40        // +40% per wave, uncapped
-    static let enemySpeedPerWave: Double = 0.04     // +4% per wave, cap at 3x
-    static let enemySpeedMaxWaveMultiplier: Double = 3.0
+    // MARK: - Wave Scaling (all linear, caps hit at wave 30)
+    static let enemyDamagePerWave: Double = 0.104   // +10.4% per wave, cap at 4x (wave 30)
+    static let enemyDamageMaxMultiplier: Double = 4.0
+    static let enemyHPPerWave: Double = 0.25        // +25% per wave, uncapped
+    static let enemySpeedPerWave: Double = 0.052    // +5.2% per wave, cap at 2.5x (wave 30)
+    static let enemySpeedMaxWaveMultiplier: Double = 2.5
 
     // MARK: - Death Scaling (additive bonus on top of wave scaling, uncapped)
     static let enemyDamageScalePerGhost: CGFloat = 0.20
