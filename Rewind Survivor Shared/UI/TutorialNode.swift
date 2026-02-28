@@ -545,11 +545,6 @@ class TutorialNode: SKNode {
         return container
     }
 
-    // Legacy single-touch handler (back button only) — kept for compatibility
-    func handleTouch(at point: CGPoint) {
-        handleTouchBegan(at: point)
-    }
-
     func hide() {
         removeAllChildren()
         pageDots.removeAll()

@@ -54,7 +54,6 @@ struct GameConfig {
     // MARK: - Visual
     static let rewindEffectDuration: TimeInterval = 1.5
     static let screenShakeMagnitude: CGFloat = 8.0
-    static let damageNumberDuration: TimeInterval = 0.8
 
     // MARK: - Spawn
     static let spawnMargin: CGFloat = 100

@@ -43,19 +43,6 @@ class EffectsManager {
         ]))
     }
 
-    func flashRed(duration: TimeInterval = 0.15) {
-        guard let scene = scene, let cam = camera else { return }
-        let flash = SKSpriteNode(color: .red, size: scene.size)
-        flash.position = cam.cameraNode.position
-        flash.zPosition = 600
-        flash.alpha = 0.3
-        scene.addChild(flash)
-        flash.run(SKAction.sequence([
-            SKAction.fadeOut(withDuration: duration),
-            SKAction.removeFromParent()
-        ]))
-    }
-
     // MARK: - Damage Vignette
 
     func showDamageVignette() {
@@ -69,18 +56,6 @@ class EffectsManager {
             SKAction.fadeOut(withDuration: 0.4),
             SKAction.removeFromParent()
         ]))
-    }
-
-    // MARK: - Damage Numbers
-
-    func spawnDamageNumber(at position: CGPoint, text: String, color: SKColor) {
-        guard let scene = scene else { return }
-        DamageNumberNode.spawn(in: scene, text: text, at: position, color: color)
-    }
-
-    func spawnScoreNumber(at position: CGPoint, score: Int) {
-        guard let scene = scene else { return }
-        DamageNumberNode.spawn(in: scene, text: "+\(score)", at: position, color: ColorPalette.gold)
     }
 
     // MARK: - Shield Block Spark

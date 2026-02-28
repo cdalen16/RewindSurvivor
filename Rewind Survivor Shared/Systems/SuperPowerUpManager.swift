@@ -131,10 +131,6 @@ class SuperPowerUpManager {
         voidBarrierNode = nil
     }
 
-    func removeAllEffects() {
-        reset()
-    }
-
     /// Respawn persistent super power-ups (for save/resume)
     func respawnSuperPowerUps(acquired: Set<SuperPowerUpType>, scene: SKScene, player: PlayerNode, enemies: [EnemyNode]) {
         for type in acquired {

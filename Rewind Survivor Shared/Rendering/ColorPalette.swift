@@ -42,7 +42,6 @@ struct ColorPalette {
     static let hudHealthMid = SKColor(red: 1.0, green: 0.667, blue: 0.0, alpha: 1.0)
     static let hudHealthLow = SKColor(red: 1.0, green: 0.133, blue: 0.0, alpha: 1.0)
     static let hudBackground = SKColor(red: 0.102, green: 0.102, blue: 0.180, alpha: 1.0)
-    static let hudXPBar = SKColor(red: 0.0, green: 0.961, blue: 1.0, alpha: 1.0)
     static let textPrimary = SKColor.white
     static let textSecondary = SKColor(red: 0.533, green: 0.533, blue: 0.667, alpha: 1.0)
     static let gold = SKColor(red: 1.0, green: 0.843, blue: 0.0, alpha: 1.0)
