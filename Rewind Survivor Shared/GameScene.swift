@@ -802,7 +802,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             player.isHidden = true
             hud.hide()
 
-            // Save stats
+            gameOverTapDelay = 2.0
+            // Show game over BEFORE saving stats so high score check works
+            gameOverScreen.show(screenSize: size, gameState: gameState) { [weak self] in
+                guard let self = self else { return }
+                self.transition {
+                    self.gameOverScreen.hide()
+                    self.showMainMenu()
+                }
+            }
+
+            // Save stats AFTER game over screen reads the old high score
             let ghostsUsed = gameState.nextDeathThresholdIndex + GameConfig.initialDeaths - gameState.deathsRemaining
             PersistenceManager.shared.recordGameEnd(
                 score: gameState.score,
@@ -812,15 +822,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 playTime: gameState.gameTime,
                 coinsEarned: gameState.coinsEarnedThisRun
             )
-
-            gameOverTapDelay = 2.0
-            gameOverScreen.show(screenSize: size, gameState: gameState) { [weak self] in
-                guard let self = self else { return }
-                self.transition {
-                    self.gameOverScreen.hide()
-                    self.showMainMenu()
-                }
-            }
         }
     }
 

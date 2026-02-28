@@ -45,12 +45,10 @@ class CombatSystem {
         let position: CGPoint
     }
     var pendingOrbitalKills: [OrbitalKill] = []
-    var pendingOrbitalHits: [(CGPoint, CGFloat)] = [] // (position, damage) for damage numbers
 
     private func updateOrbitals(deltaTime: TimeInterval, player: PlayerNode, enemies: [EnemyNode], scene: SKScene, gameState: GameState) {
         let count = gameState.orbitalCount
         pendingOrbitalKills.removeAll()
-        pendingOrbitalHits.removeAll()
 
         // Spawn/remove orbital nodes to match count
         while orbitalNodes.count < count {
@@ -118,8 +116,6 @@ class CombatSystem {
 
                     if killed {
                         pendingOrbitalKills.append(OrbitalKill(enemy: enemy, position: enemy.position))
-                    } else {
-                        pendingOrbitalHits.append((enemy.position, damage))
                     }
 
                     // Hit flash on orbital

@@ -45,10 +45,6 @@ class GhostPlaybackController {
         activeGhosts.removeAll()
     }
 
-    var ghostTargetNodes: [SKNode] {
-        return activeGhosts.map { $0 as SKNode }
-    }
-
     /// Weighted ghost count: sum of all ghost levels (level 2 = 2 ghosts for scaling)
     var weightedGhostCount: Int {
         return activeGhosts.reduce(0) { $0 + $1.ghostLevel }

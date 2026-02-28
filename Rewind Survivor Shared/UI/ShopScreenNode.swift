@@ -643,12 +643,6 @@ class ShopScreenNode: SKNode {
         dismissConfirmation()
     }
 
-    // Legacy single-point handler for backward compatibility
-    func handleTouch(at point: CGPoint) {
-        handleTouchBegan(at: point)
-        handleTouchEnded(at: point)
-    }
-
     func hide() {
         dismissConfirmation()
         removeAllChildren()

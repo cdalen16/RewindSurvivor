@@ -6,6 +6,7 @@ class PlayerNode: SKSpriteNode {
     var isInvincible: Bool = false
     var facingDirection: CGVector = CGVector(dx: 0, dy: -1)
     private var animationTimer: TimeInterval = 0
+    private var invincibilityTimer: TimeInterval = 0
     private var currentFrame: Int = 0
     private let animationInterval: TimeInterval = 0.2
     private var currentFacing: SpriteFactory.Direction = .down
@@ -98,10 +99,12 @@ class PlayerNode: SKSpriteNode {
             animationTimer = 0
         }
 
-        // Invincibility visual
+        // Invincibility visual (uses separate timer so it works when idle)
         if isInvincible {
-            self.alpha = (Int(animationTimer * 20) % 2 == 0) ? 1.0 : 0.4
+            invincibilityTimer += deltaTime
+            self.alpha = (Int(invincibilityTimer * 20) % 2 == 0) ? 1.0 : 0.4
         } else {
+            invincibilityTimer = 0
             self.alpha = 1.0
         }
     }
