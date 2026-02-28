@@ -51,7 +51,4 @@ class CameraManager {
         shakeTimer = duration
     }
 
-    func snapTo(_ position: CGPoint) {
-        cameraNode.position = position
-    }
 }

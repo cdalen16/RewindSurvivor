@@ -32,11 +32,11 @@ class EffectsManager {
     func flashWhite(duration: TimeInterval = 0.1) {
         guard let scene = scene, let cam = camera else { return }
         let flash = SKSpriteNode(color: .white, size: scene.size)
-        flash.position = cam.cameraNode.position
+        flash.position = .zero
         flash.zPosition = 600
         flash.alpha = 0.5
         flash.blendMode = .add
-        scene.addChild(flash)
+        cam.cameraNode.addChild(flash)
         flash.run(SKAction.sequence([
             SKAction.fadeOut(withDuration: duration),
             SKAction.removeFromParent()
@@ -48,10 +48,10 @@ class EffectsManager {
     func showDamageVignette() {
         guard let scene = scene, let cam = camera else { return }
         let vignette = SKSpriteNode(color: .red, size: CGSize(width: scene.size.width + 40, height: scene.size.height + 40))
-        vignette.position = cam.cameraNode.position
+        vignette.position = .zero
         vignette.zPosition = 500
         vignette.alpha = 0.25
-        scene.addChild(vignette)
+        cam.cameraNode.addChild(vignette)
         vignette.run(SKAction.sequence([
             SKAction.fadeOut(withDuration: 0.4),
             SKAction.removeFromParent()

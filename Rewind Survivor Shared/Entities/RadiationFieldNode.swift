@@ -8,7 +8,7 @@ class RadiationFieldNode: SKNode {
     private var rotationAngle: CGFloat = 0
     private var pulsePhase: CGFloat = 0
 
-    init(radius: CGFloat = 100) {
+    override init() {
         super.init()
 
         self.name = "radiationField"

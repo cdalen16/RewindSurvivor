@@ -117,7 +117,6 @@ class GameState {
     var currentWave: Int = 0
     var deathsRemaining: Int = GameConfig.initialDeaths
     var nextDeathThresholdIndex: Int = 0
-    var isGameOver: Bool = false
     var gameTime: TimeInterval = 0
     var gamePhase: GamePhase = .mainMenu
 
@@ -175,7 +174,6 @@ class GameState {
         currentWave = 0
         deathsRemaining = GameConfig.initialDeaths
         nextDeathThresholdIndex = 0
-        isGameOver = false
         gameTime = 0
         gamePhase = .mainMenu
         playerSpeedMultiplier = 1.0

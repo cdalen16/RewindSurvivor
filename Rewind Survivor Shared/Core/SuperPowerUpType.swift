@@ -42,12 +42,4 @@ enum SuperPowerUpType: String, CaseIterable, Codable, Hashable {
         }
     }
 
-    var duration: TimeInterval {
-        switch self {
-        case .chronoShift: return .infinity // permanent
-        case .radiationField: return .infinity // permanent
-        case .shockwavePulse: return .infinity // permanent
-        case .voidBarrier: return .infinity // permanent
-        }
-    }
 }

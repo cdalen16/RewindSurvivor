@@ -579,6 +579,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         freezeAuraContainer?.removeFromParent()
         freezeAuraContainer = nil
         enumerateChildNodes(withName: "//pickup") { node, _ in node.removeFromParent() }
+        enumerateChildNodes(withName: "//projectile") { node, _ in node.removeFromParent() }
     }
 
     private func showMainMenu() {
@@ -717,7 +718,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         gameState.gamePhase = .superPowerUpSelect
         inputManager.reset()
         let choices = superPowerUpManager.generateChoices(
-            deathsAvailable: gameState.deathsRemaining,
             acquired: gameState.acquiredSuperPowerUps
         )
         superPowerUpSelection.show(
@@ -795,7 +795,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Game over
             PersistenceManager.shared.clearSavedRun()
             gameState.gamePhase = .gameOver
-            gameState.isGameOver = true
             inputManager.reset()
             ParticleFactory.playerDeathExplosion(at: player.position, scene: self)
             effectsManager.shakeExtreme()
@@ -857,7 +856,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     // MARK: - Save / Resume
 
     private func saveCurrentRun() {
-        guard gameState.gamePhase == .playing else { return }
+        let savablePhases: Set<GamePhase> = [.playing, .powerUpSelect, .superPowerUpSelect, .waveComplete]
+        guard savablePhases.contains(gameState.gamePhase) else { return }
 
         // Serialize enemies
         let savedEnemies: [SavedEnemy] = waveManager.activeEnemies.compactMap { enemy in
@@ -882,7 +882,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     timestamp: s.timestamp
                 )
             }
-            return SavedGhostRecording(snapshots: snaps, ghostLevel: ghost.ghostLevel, orbitIndex: index)
+            return SavedGhostRecording(snapshots: snaps, ghostLevel: ghost.ghostLevel)
         }
 
         // Serialize spawn queue
@@ -1205,7 +1205,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             enemy.update(deltaTime: dt, targets: [player])
         }
 
-        // Catch death from non-contact damage (e.g. bomber explosion)
+        // Safety net: catch any unhandled player death
         if player.hp <= 0 && !player.isHidden {
             onPlayerDeath()
             return
@@ -1454,10 +1454,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         else if maskA == PhysicsCategory.enemy && maskB == PhysicsCategory.ghostBullet {
             handleProjectileHitEnemy(projectile: bodyB.node as? ProjectileNode, enemy: bodyA.node as? EnemyNode)
         }
-        // Player picks up coin: player(1) + pickup(128)
-        else if maskA == PhysicsCategory.player && maskB == PhysicsCategory.pickup {
-            handlePickupCollected(pickup: bodyB.node as? PickupNode)
-        }
         // Bullet hits wall/obstacle: bullet(4/8/32) + wall(64)
         // Always destroy on wall hit, even if piercing
         else if maskB == PhysicsCategory.wall {
@@ -1654,6 +1650,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         chainLightning(from: target.position, damage: damage * 0.7, bouncesRemaining: bouncesRemaining - 1, hitEnemies: newHitSet)
     }
 
+    // MARK: - AoE Damage Handling
+
+    func handleAoEDamageOnPlayer(died: Bool) {
+        guard gameState.gamePhase == .playing else { return }
+        effectsManager.showDamageVignette()
+        effectsManager.shakeMedium()
+        if died {
+            onPlayerDeath()
+        }
+    }
+
     // MARK: - Coin Pickups
 
     private func spawnCoinPickups(at position: CGPoint, value: Int) {
@@ -1661,12 +1668,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let coinValue = max(1, value / 10)
         let pickup = PickupNode(value: coinValue, position: position)
         addChild(pickup)
-    }
-
-    private func handlePickupCollected(pickup: PickupNode?) {
-        guard let pickup = pickup, pickup.parent != nil else { return }
-        gameState.coinsEarnedThisRun += pickup.coinValue
-        pickup.collect()
     }
 
     private func updatePickups(dt: TimeInterval) {
@@ -1746,6 +1747,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let died = player.takeDamage(projectile.damage)
         projectile.removeFromParent()
         effectsManager.showDamageVignette()
+        effectsManager.shakeLight()
 
         if died {
             onPlayerDeath()

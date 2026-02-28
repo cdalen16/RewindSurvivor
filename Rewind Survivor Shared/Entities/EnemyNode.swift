@@ -533,17 +533,6 @@ class EnemyNode: SKSpriteNode {
         }
     }
 
-    func removeChronoSlow() {
-        isChronoSlowed = false
-        chronoSlowMultiplier = 1.0
-        if isSlowed {
-            moveSpeed = baseSpeed * (1.0 - currentSlowPercent)
-        } else {
-            moveSpeed = baseSpeed
-            colorBlendFactor = 0
-        }
-    }
-
     func restoreHP(_ restoredHP: CGFloat, maxHP restoredMaxHP: CGFloat) {
         self.hp = restoredHP
         self.maxHP = restoredMaxHP
@@ -625,7 +614,7 @@ class EnemyNode: SKSpriteNode {
     }
 
     private func explode() {
-        guard let scene = self.scene else { return }
+        guard let scene = self.scene as? GameScene else { return }
 
         // Damage area
         let explosionRadius: CGFloat = 80
@@ -633,7 +622,10 @@ class EnemyNode: SKSpriteNode {
             let dx = node.position.x - self.position.x
             let dy = node.position.y - self.position.y
             if sqrt(dx * dx + dy * dy) < explosionRadius {
-                (node as? PlayerNode)?.takeDamage(self.contactDamage)
+                if let player = node as? PlayerNode {
+                    let died = player.takeDamage(self.contactDamage)
+                    scene.handleAoEDamageOnPlayer(died: died)
+                }
             }
         }
 
@@ -752,7 +744,7 @@ class EnemyNode: SKSpriteNode {
     }
 
     private func groundPound() {
-        guard let scene = self.scene else { return }
+        guard let scene = self.scene as? GameScene else { return }
 
         let radius: CGFloat = 100
         // Damage player if in range
@@ -760,7 +752,10 @@ class EnemyNode: SKSpriteNode {
             let dx = node.position.x - self.position.x
             let dy = node.position.y - self.position.y
             if sqrt(dx * dx + dy * dy) < radius {
-                (node as? PlayerNode)?.takeDamage(self.contactDamage * 1.5)
+                if let player = node as? PlayerNode {
+                    let died = player.takeDamage(self.contactDamage * 1.5)
+                    scene.handleAoEDamageOnPlayer(died: died)
+                }
             }
         }
 

@@ -29,7 +29,6 @@ struct SavedSnapshot: Codable {
 struct SavedGhostRecording: Codable {
     var snapshots: [SavedSnapshot]
     var ghostLevel: Int
-    var orbitIndex: Int
 }
 
 struct SavedSpawnEntry: Codable {

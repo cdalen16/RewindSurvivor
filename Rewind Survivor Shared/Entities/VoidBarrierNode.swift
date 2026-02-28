@@ -1,12 +1,10 @@
 import SpriteKit
 
 class VoidBarrierNode: SKNode {
-    private var remainingTime: TimeInterval
     private let destroyRadius: CGFloat = 70
     private var rotationAngle: CGFloat = 0
 
-    init(duration: TimeInterval) {
-        self.remainingTime = duration
+    override init() {
         super.init()
 
         self.name = "voidBarrier"
@@ -64,14 +62,7 @@ class VoidBarrierNode: SKNode {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    /// Returns true when expired. Call with player position to follow.
-    func update(deltaTime: TimeInterval, playerPosition: CGPoint, scene: SKScene) -> Bool {
-        remainingTime -= deltaTime
-        if remainingTime <= 0 {
-            expire()
-            return true
-        }
-
+    func update(deltaTime: TimeInterval, playerPosition: CGPoint, scene: SKScene) {
         // Follow player
         position = playerPosition
 
@@ -108,29 +99,5 @@ class VoidBarrierNode: SKNode {
             }
         }
 
-        return false
-    }
-
-    private func expire() {
-        guard let scene = self.scene else { removeFromParent(); return }
-
-        // Dissolve ring outward
-        let dissolve = SKShapeNode(circleOfRadius: destroyRadius)
-        dissolve.fillColor = .clear
-        dissolve.strokeColor = ColorPalette.superVoidBarrier
-        dissolve.lineWidth = 2
-        dissolve.blendMode = .add
-        dissolve.position = position
-        dissolve.zPosition = 96
-        scene.addChild(dissolve)
-        dissolve.run(SKAction.sequence([
-            SKAction.group([
-                SKAction.scale(to: 2.0, duration: 0.3),
-                SKAction.fadeOut(withDuration: 0.3)
-            ]),
-            SKAction.removeFromParent()
-        ]))
-
-        removeFromParent()
     }
 }

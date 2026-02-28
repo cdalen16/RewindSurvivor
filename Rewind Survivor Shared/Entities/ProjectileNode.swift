@@ -11,8 +11,7 @@ class ProjectileNode: SKSpriteNode {
     let projectileVelocity: CGVector
     var piercingRemaining: Int
     let projectileType: ProjectileType
-    var isCrit: Bool = false
-    var lifetime: TimeInterval = 2.0
+    private let lifetime: TimeInterval = 2.0
 
     init(damage: CGFloat, velocity: CGVector, piercing: Int, type: ProjectileType) {
         self.damage = damage

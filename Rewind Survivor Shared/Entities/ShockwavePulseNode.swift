@@ -7,7 +7,6 @@ class ShockwavePulseNode: SKNode {
     private let pushForce: CGFloat = 800
     private let pulseDamage: CGFloat = 15
     private var orbAngle: CGFloat = 0
-    private var chargePhase: CGFloat = 0
 
     override init() {
         super.init()

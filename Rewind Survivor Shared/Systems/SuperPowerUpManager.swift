@@ -10,18 +10,18 @@ class SuperPowerUpManager {
     /// Whether to show super selection after this wave
     func shouldShowSuperSelection(wave: Int, deathsAvailable: Int, acquired: Set<SuperPowerUpType>) -> Bool {
         guard wave >= 15, deathsAvailable >= 1 else { return false }
-        let available = generateChoices(deathsAvailable: deathsAvailable, acquired: acquired)
+        let available = generateChoices(acquired: acquired)
         return !available.isEmpty
     }
 
-    /// Available supers the player can see (includes unaffordable for display)
-    func generateChoices(deathsAvailable: Int, acquired: Set<SuperPowerUpType>) -> [SuperPowerUpType] {
+    /// Available supers the player hasn't acquired yet
+    func generateChoices(acquired: Set<SuperPowerUpType>) -> [SuperPowerUpType] {
         return SuperPowerUpType.allCases.filter { !acquired.contains($0) }
     }
 
     /// Whether the player can afford at least one available super
     func canAffordAny(deathsAvailable: Int, acquired: Set<SuperPowerUpType>) -> Bool {
-        let available = generateChoices(deathsAvailable: deathsAvailable, acquired: acquired)
+        let available = generateChoices(acquired: acquired)
         return available.contains { $0.deathCost <= deathsAvailable }
     }
 
@@ -69,7 +69,7 @@ class SuperPowerUpManager {
     }
 
     private func applyVoidBarrier(scene: SKScene, player: PlayerNode) {
-        let barrier = VoidBarrierNode(duration: SuperPowerUpType.voidBarrier.duration)
+        let barrier = VoidBarrierNode()
         barrier.position = player.position
         scene.addChild(barrier)
         voidBarrierNode = barrier
@@ -113,8 +113,7 @@ class SuperPowerUpManager {
             if barrier.parent == nil {
                 voidBarrierNode = nil
             } else {
-                let expired = barrier.update(deltaTime: deltaTime, playerPosition: player.position, scene: scene)
-                if expired { voidBarrierNode = nil }
+                barrier.update(deltaTime: deltaTime, playerPosition: player.position, scene: scene)
             }
         }
     }
@@ -151,7 +150,7 @@ class SuperPowerUpManager {
                 scene.addChild(pulse)
                 shockwavePulseNode = pulse
             case .voidBarrier:
-                let barrier = VoidBarrierNode(duration: SuperPowerUpType.voidBarrier.duration)
+                let barrier = VoidBarrierNode()
                 barrier.position = player.position
                 scene.addChild(barrier)
                 voidBarrierNode = barrier

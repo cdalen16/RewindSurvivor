@@ -158,10 +158,8 @@ class CombatSystem {
         let speed = GameConfig.playerBaseProjectileSpeed
 
         // Critical strike roll
-        var isCrit = false
         if gameState.critChance > 0 && CGFloat.random(in: 0...1) < gameState.critChance {
             damage *= 2.0
-            isCrit = true
         }
 
         for i in 0..<baseCount {
@@ -174,7 +172,6 @@ class CombatSystem {
                 piercing: gameState.playerProjectilePiercing,
                 type: .player
             )
-            projectile.isCrit = isCrit
             projectile.position = player.position
             scene.addChild(projectile)
         }
@@ -194,10 +191,8 @@ class CombatSystem {
         let speed = GameConfig.playerBaseProjectileSpeed
 
         // Critical strike roll (same as player)
-        var isCrit = false
         if gameState.critChance > 0 && CGFloat.random(in: 0...1) < gameState.critChance {
             damage *= 2.0
-            isCrit = true
         }
 
         let baseCount = 1 + gameState.playerProjectileCountBonus
@@ -212,7 +207,6 @@ class CombatSystem {
                 piercing: gameState.playerProjectilePiercing,
                 type: .ghost
             )
-            projectile.isCrit = isCrit
             projectile.position = position
             scene.addChild(projectile)
         }

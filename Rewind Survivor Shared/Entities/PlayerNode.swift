@@ -23,7 +23,7 @@ class PlayerNode: SKSpriteNode {
         // Physics body
         let body = SKPhysicsBody(circleOfRadius: 12)
         body.categoryBitMask = PhysicsCategory.player
-        body.contactTestBitMask = PhysicsCategory.enemy | PhysicsCategory.enemyBullet | PhysicsCategory.pickup
+        body.contactTestBitMask = PhysicsCategory.enemy | PhysicsCategory.enemyBullet
         body.collisionBitMask = PhysicsCategory.wall
         body.allowsRotation = false
         body.affectedByGravity = false
@@ -34,13 +34,6 @@ class PlayerNode: SKSpriteNode {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func setup(gameState: GameState) {
-        maxHP = GameConfig.playerBaseHP + gameState.playerHPBonus
-        hp = maxHP
-        isInvincible = false
-        position = .zero
     }
 
     func update(deltaTime: TimeInterval, velocity: CGVector, gameState: GameState) {
